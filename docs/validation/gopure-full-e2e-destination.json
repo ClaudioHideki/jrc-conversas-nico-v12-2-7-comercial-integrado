@@ -1,0 +1,270 @@
+{
+  "passed": true,
+  "reports": [
+    {
+      "agent_key": "nico",
+      "passed": true,
+      "at": "2026-09-08T19:25:59.190Z",
+      "account_id": 1,
+      "run_id": 32,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 736,
+        "total_tokens": 979,
+        "output_tokens": 243
+      },
+      "summary": "O cliente demonstrou interesse em comprar e solicitou informações sobre implantação e suporte. O lead no CRM é 'Cliente Sintético 1' com uma oportunidade chamada 'GoPure Homologação', ambos dados fictícios para validação e sem operação externa. No ERP, há uma simulação de pedido para expansão de 5 para 10 ramais e treinamento, além de um chamado em análise sobre áudio unilateral, também fictícios.",
+      "suggested_reply": "Olá! Para melhor atendê-lo, poderia informar qual o prazo desejado para implantação? Além disso, qual o nível de suporte que espera (básico, avançado)? Há alguma necessidade específica para o treinamento?",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "comercial",
+      "passed": true,
+      "at": "2026-09-08T19:26:02.715Z",
+      "account_id": 1,
+      "run_id": 33,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 761,
+        "total_tokens": 974,
+        "output_tokens": 213
+      },
+      "summary": "O cliente demonstrou interesse em informações sobre implantação e suporte, com um pedido fictício para expansão de ramais e treinamento. O lead no CRM está em estágio inicial, sem dados concretos de necessidade, prazo ou decisor. Os dados ERP são simulados, sem informações reais de diagnóstico ou SLA.",
+      "suggested_reply": "Olá, obrigado pelo interesse. Para melhor atendê-lo, poderia informar qual a necessidade específica de implantação e suporte? Qual o prazo desejado para início? Quem será o decisor para esta contratação?",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "cx",
+      "passed": true,
+      "at": "2026-09-08T19:26:08.480Z",
+      "account_id": 1,
+      "run_id": 34,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 761,
+        "total_tokens": 1031,
+        "output_tokens": 270
+      },
+      "summary": "O cliente demonstrou interesse em comprar e solicitou informações sobre implantação e suporte. O lead do CRM indica que se trata de uma oportunidade nova para o cliente Sintético 1, com dados fictícios para validação. No ERP, há uma simulação de pedido de expansão de ramais de 5 para 10 e treinamento, além de um chamado em análise sobre áudio unilateral em um ramal, sem diagnóstico confirmado. Também há uma solicitação fictícia de segunda via, sem cobrança associada.",
+      "suggested_reply": "Olá! Para melhor atendê-lo, poderia informar quais são suas principais dúvidas sobre implantação e suporte? Além disso, gostaria de saber se há alguma prioridade específica para a expansão dos ramais ou para o treinamento?",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "suporte_n1",
+      "passed": true,
+      "at": "2026-09-08T19:26:13.074Z",
+      "account_id": 1,
+      "run_id": 35,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 782,
+        "total_tokens": 1052,
+        "output_tokens": 270
+      },
+      "summary": "O cliente Sintético 1 demonstrou interesse em informações sobre implantação e suporte, conforme conversa inicial. O lead do CRM indica uma oportunidade para o cliente GoPure Homologação, com dados fictícios para validação. No ERP, há uma simulação de pedido de expansão de 5 para 10 ramais e treinamento, além de um chamado em análise sobre áudio unilateral em um ramal, sem diagnóstico confirmado. Não há dados reais de preços, prazos ou ações executadas, apenas simulações.",
+      "suggested_reply": "Olá, obrigado pelo interesse. Para melhor atendê-lo, poderia informar: qual o prazo desejado para implantação? Quantos usuários ou ramais pretende incluir? Há alguma necessidade específica para o suporte, como horários ou tipos de atendimento?",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "financeiro",
+      "passed": true,
+      "at": "2026-09-08T19:26:16.623Z",
+      "account_id": 1,
+      "run_id": 36,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 805,
+        "total_tokens": 1073,
+        "output_tokens": 268
+      },
+      "summary": "O cliente demonstrou interesse em informações sobre implantação e suporte, conforme conversa inicial. O lead no CRM indica um cliente sintético novo, e a oportunidade também é fictícia para validação interna, sem dados reais externos. No ERP, os dados são simulados, incluindo pedido de expansão de ramais e treinamento, além de um chamado em análise sem diagnóstico confirmado. Não há informações reais sobre preços, prazos ou pagamentos.",
+      "suggested_reply": "Olá! Para melhor atendê-lo, poderia informar qual o escopo desejado para a implantação e suporte? Há alguma necessidade específica para o treinamento ou expansão de ramais? Também gostaria de saber se há alguma urgência ou prazo esperado para o início do serviço.",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "implantacao",
+      "passed": true,
+      "at": "2026-09-08T19:26:21.236Z",
+      "account_id": 1,
+      "run_id": 37,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 770,
+        "total_tokens": 1052,
+        "output_tokens": 282
+      },
+      "summary": "O pedido de implantação e suporte do cliente Sintético 1 refere-se à expansão de ramais de 5 para 10 e treinamento, conforme dados fictícios do ERP em modo SIMULAÇÃO. Não há confirmação oficial de provisionamento, ativação ou treinamento concluído, nem dados reais de portabilidade, números ou ramais, que dependem de confirmação da operadora/PABX. Também há um chamado em análise sobre áudio unilateral em um ramal, sem diagnóstico confirmado. Os dados são fictícios e não houve operação externa.",
+      "suggested_reply": "Olá, para melhor atendê-lo, poderia confirmar se a expansão para 10 ramais já possui aprovação da operadora/PABX? Além disso, qual a expectativa para o treinamento: presencial ou remoto? Há alguma pendência específica que gostaria de destacar?",
+      "evidence": [
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    },
+    {
+      "agent_key": "supervisor",
+      "passed": true,
+      "at": "2026-09-08T19:26:25.866Z",
+      "account_id": 1,
+      "run_id": 38,
+      "mode": "provider",
+      "model": "gpt-4.1-mini",
+      "usage": {
+        "input_tokens": 773,
+        "total_tokens": 1061,
+        "output_tokens": 288
+      },
+      "summary": "O cliente demonstrou interesse em comprar e solicitou informações sobre implantação e suporte. O lead do CRM indica que se trata de uma oportunidade nova para o cliente sintético 1, com dados fictícios para validação. O ERP apresenta dados simulados, incluindo uma solicitação de expansão de ramais e treinamento, além de um chamado em análise sem diagnóstico confirmado. Não há informações reais sobre preços, prazos ou ações executadas. Recomenda-se uma resposta curta com perguntas para qualificar melhor as necessidades do cliente, sem inventar dados.",
+      "suggested_reply": "Olá! Para melhor atendê-lo, poderia informar qual o prazo desejado para implantação e se há alguma preferência específica para o suporte? Além disso, qual o volume atual e esperado de ramais e usuários que precisarão de treinamento?",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "conversation",
+          "reference": "message:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:3"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "erp",
+          "reference": "binding:1:eabb761952a2ce5e240935bf"
+        }
+      ],
+      "public_messages_unchanged": true
+    }
+  ]
+}

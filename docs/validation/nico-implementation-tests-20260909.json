@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-09",
+  "application": "http://localhost:3107",
+  "rails": {"examples":105,"failures":0,"includes_existing_message_and_assignment_regressions":true},
+  "frontend": {"tests":19,"failures":0},
+  "runtime": {"tests":15,"failures":0},
+  "provider_e2e": "nico-operational-e2e.json",
+  "voice_e2e": "nico-voice-e2e.json",
+  "browser_contact_created": {"id":50,"name":"NICO Validação Interface","email":"nico-interface@example.test","external_message_sent":false},
+  "local_channels": {"api_inboxes":2,"email_inboxes":0,"sip_credentials":0,"video_settings":0,"account_webhooks":0},
+  "erp_container": "stopped",
+  "caveats": ["External delivery and telephony need configured channels", "Voice test used synthetic audio, not the physical microphone", "Linter passed with warnings about dynamic locale keys and template formatting"]
+}

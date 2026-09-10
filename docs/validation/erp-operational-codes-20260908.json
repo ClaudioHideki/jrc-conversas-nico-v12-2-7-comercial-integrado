@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-08T14:45:22.023Z",
+  "company": {
+    "id": "3",
+    "name": "Operadora JRC",
+    "cnpj": ""
+  },
+  "user": {
+    "keys": [
+      "COD_USUARIO",
+      "NOM_USUARIO",
+      "DES_EMAIL"
+    ],
+    "id": "4912",
+    "company_id": null
+  }
+}

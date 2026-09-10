@@ -1,0 +1,79 @@
+<script setup>
+import { computed } from 'vue';
+import { useMapGetter } from 'dashboard/composables/store.js';
+import Icon from 'next/icon/Icon.vue';
+
+const props = defineProps({
+  to: { type: [Object, String], default: '' },
+  label: { type: String, default: '' },
+  icon: { type: [String, Object], default: '' },
+  expandable: { type: Boolean, default: false },
+  isExpanded: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: false },
+  hasActiveChild: { type: Boolean, default: false },
+  getterKeys: { type: Object, default: () => ({}) },
+  disabled: { type: Boolean, default: false },
+  newBadge: { type: Boolean, default: false },
+});
+
+const emit = defineEmits(['toggle']);
+
+const showBadge = useMapGetter(props.getterKeys.badge);
+const dynamicCount = useMapGetter(props.getterKeys.count);
+const count = computed(() =>
+  dynamicCount.value > 99 ? '99+' : dynamicCount.value
+);
+</script>
+
+<template>
+  <component
+    :is="to && !disabled ? 'router-link' : 'div'"
+    class="flex items-center gap-2 px-2.5 py-2 rounded-xl h-10 min-w-0 transition-colors"
+    role="button"
+    draggable="false"
+    :to="disabled ? undefined : to"
+    :title="label"
+    :class="{
+      'bg-[#087cf0] text-white font-medium shadow-[0_6px_18px_rgba(8,124,240,0.28)]':
+        isActive && !hasActiveChild,
+      'bg-white/10 text-white font-medium': hasActiveChild,
+      'text-white/90 hover:bg-white/10 hover:text-white':
+        !isActive && !hasActiveChild && !disabled,
+      'cursor-not-allowed text-white/40 opacity-60': disabled,
+    }"
+    @click.stop="disabled ? undefined : emit('toggle')"
+  >
+    <div v-if="icon" class="relative flex items-center gap-2">
+      <Icon v-if="icon" :icon="icon" class="size-[18px]" />
+      <span
+        v-if="showBadge"
+        class="size-2 -top-px ltr:-right-px rtl:-left-px bg-n-brand absolute rounded-full border border-n-solid-2"
+      />
+    </div>
+    <div
+      class="flex items-center gap-1.5 flex-grow justify-between min-w-0 flex-1"
+    >
+      <span class="truncate text-sm font-medium text-inherit">
+        {{ label }}
+      </span>
+      <span
+        v-if="newBadge"
+        class="inline-flex h-5 items-center rounded-full bg-n-ruby-9 px-2 text-xxs font-semibold text-white flex-shrink-0"
+      >
+        Novo
+      </span>
+      <span
+        v-if="dynamicCount && !expandable"
+        class="inline-grid h-5 min-w-5 place-items-center rounded-full bg-white/15 px-1 text-xxs font-medium leading-3 text-white flex-shrink-0"
+      >
+        {{ count }}
+      </span>
+    </div>
+    <span
+      v-if="expandable"
+      v-show="isExpanded"
+      class="i-lucide-chevron-up size-3"
+      @click.stop="emit('toggle')"
+    />
+  </component>
+</template>

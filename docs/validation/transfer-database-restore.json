@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-07",
+  "database": "jrc_nico_transfer_validation_20260907",
+  "source": "transferencia/database.sql",
+  "restore_exit_code": 0,
+  "accounts": 2,
+  "users": 3,
+  "nico_runs": 5,
+  "application_database_modified": false,
+  "powershell_restore_parser": "passed",
+  "compose_transfer_config": "passed",
+  "second_physical_machine_tested": false
+}

@@ -1,0 +1,49 @@
+[
+  {
+    "archive": "broker-images.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 68,
+    "uncompressed_bytes": 585718272,
+    "images": [
+      "jrc-whatsapp-broker:phase-1-increment-2",
+      "jrc-evolution-engine:phase0-local",
+      "postgres:16.4-alpine"
+    ]
+  },
+  {
+    "archive": "docker-images.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 72,
+    "uncompressed_bytes": 901520384,
+    "images": [
+      "jrc-nico-test:local",
+      "node:24.13.0-bookworm-slim",
+      "pgvector/pgvector:pg16",
+      "redis:7.4.0-alpine"
+    ]
+  },
+  {
+    "archive": "node_modules.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 71585,
+    "uncompressed_bytes": 532398080
+  },
+  {
+    "archive": "redis_data.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 6,
+    "uncompressed_bytes": 1320960
+  },
+  {
+    "archive": "runtime_data.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 1097,
+    "uncompressed_bytes": 29583360
+  },
+  {
+    "archive": "runtime_modules.tar.gz",
+    "gzip_crc": "passed",
+    "entries": 10336,
+    "uncompressed_bytes": 273510400
+  }
+]

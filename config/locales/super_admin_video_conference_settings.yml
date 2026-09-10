@@ -1,0 +1,5 @@
+en:
+  super_admin:
+    video_conference_settings:
+      saved: 'URLs de vídeo conferência salvas com sucesso.'
+      removed: 'Configuração de vídeo conferência removida.'

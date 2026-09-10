@@ -1,0 +1,98 @@
+{
+  "WHATSAPP_CALLING": {
+    "TITLE": "WhatsApp Calling",
+    "META_OFFICIAL": "Official Meta integration",
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "STATUS": {
+      "AWAITING_META": "Awaiting Meta configuration",
+      "AWAITING_INBOX": "Awaiting an enabled WhatsApp Cloud inbox",
+      "VALIDATED": "Official Meta configuration validated"
+    },
+    "CALL_STATE": {
+      "INCOMING": "Incoming call",
+      "CALLING": "Calling",
+      "IN_PROGRESS": "In call",
+      "ENDED": "Ended",
+      "FAILED": "Failed"
+    },
+    "PHONE_LABEL": "WhatsApp number",
+    "PHONE_PLACEHOLDER": "E.g. 15551234567",
+    "PHONE_HELP": "Enter the number with country code or select a contact.",
+    "CLEAR_NUMBER": "Clear number",
+    "INBOX_LABEL": "WhatsApp inbox",
+    "CALL_BUTTON": "Call via WhatsApp",
+    "CONTROLS": {
+      "MUTE": "Mute",
+      "UNMUTE": "Unmute",
+      "CALL": "Call",
+      "END": "End"
+    },
+    "MODULE_NOTE": "Independent from Extension/PBX. Only features supported by Meta's official solution are used.",
+    "HELP": {
+      "NOT_CONFIGURED": "WhatsApp Calling is not configured yet.",
+      "NO_INBOX": "No WhatsApp Cloud inbox is enabled for calls.",
+      "INVALID_NUMBER": "Enter a valid number with country code.",
+      "CHECK_PERMISSION": "Check the customer's permission to enable calling.",
+      "READY": "The call will use Meta's official integration."
+    },
+    "ALERT": {
+      "PERMISSION_REQUESTED": "Call permission was requested from the contact. No call was simulated.",
+      "PERMISSION_REQUEST_FAILED": "Could not send the call permission request.",
+      "CALL_FAILED": "Failed to start the WhatsApp call.",
+      "END_FAILED": "Failed to end the WhatsApp call."
+    },
+    "PERMISSION": {
+      "CHECK_REQUIRED": "Check whether this customer has authorized WhatsApp calls.",
+      "APPROVED": "Permission approved. Ready to call.",
+      "REQUIRED": "This customer has not authorized WhatsApp calls yet.",
+      "REQUESTED": "Permission request sent. Wait for approval in WhatsApp.",
+      "PENDING": "Waiting for the customer's authorization.",
+      "DENIED": "The customer did not authorize WhatsApp calls.",
+      "EXPIRED": "The call permission has expired.",
+      "UNAVAILABLE": "Could not check the call permission with Meta.",
+      "CREDENTIAL_INVALID": "The Meta credential must be updated by an administrator.",
+      "CHECK_ACTION": "Check permission again",
+      "REQUEST_ACTION": "Request permission"
+    },
+    "HISTORY": {
+      "TITLE": "Call history",
+      "TOTAL": "Total calls",
+      "ANSWERED": "Answered",
+      "MISSED": "Missed",
+      "TODAY": "Today",
+      "DAYS": "{count} days",
+      "ALL_DIRECTIONS": "All directions",
+      "INBOUND_PLURAL": "Incoming",
+      "OUTBOUND_PLURAL": "Outgoing",
+      "ALL_STATUSES": "All statuses",
+      "FAILED": "Failed",
+      "EMPTY_TITLE": "No calls available",
+      "EMPTY_DESCRIPTION": "No real records were found for the selected filters.",
+      "INBOUND": "Incoming",
+      "OUTBOUND": "Outgoing",
+      "STATUS": {
+        "RINGING": "Ringing",
+        "IN_PROGRESS": "In progress",
+        "COMPLETED": "Answered",
+        "NO_ANSWER": "Not answered",
+        "FAILED": "Failed",
+        "REJECTED": "Rejected"
+      }
+    },
+    "SIDEBAR": {
+      "TITLE": "WhatsApp Calling",
+      "GENERAL_DIALER": "General dialer",
+      "NUMBER_HELP": "Use the contact phone or enter any number.",
+      "AVAILABLE": "Available",
+      "NOT_CONFIGURED": "Enable WhatsApp Calling in settings.",
+      "ENTER_NUMBER": "Enter a number to place the call.",
+      "CHECKING_PERMISSION": "Checking call permission...",
+      "KEYPAD": "Keypad",
+      "HIDE_KEYPAD": "Hide keypad",
+      "ANSWER": "Answer",
+      "BACKSPACE": "Delete last digit",
+      "CLEAR": "Clear"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "at": "2026-09-08T14:52:28.524Z",
+  "reads": [
+    {
+      "agent": "suporte_n1",
+      "ok": true,
+      "count": 3,
+      "kinds": [
+        "customer",
+        "ticket-36349",
+        "ticket-scope"
+      ]
+    },
+    {
+      "agent": "financeiro",
+      "ok": true,
+      "count": 3,
+      "kinds": [
+        "customer",
+        "charge-50517",
+        "finance-limit"
+      ]
+    }
+  ]
+}

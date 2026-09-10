@@ -1,0 +1,29 @@
+[
+  {
+    "bytes_read": 618,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "at": "2026-09-08T13:56:24.6365003Z",
+    "customer_values_recorded": false,
+    "http_status": 200,
+    "system": "helpdesk",
+    "json_valid": true,
+    "api_status": 1
+  },
+  {
+    "bytes_read": 154,
+    "response_keys": [
+      "msg",
+      "data"
+    ],
+    "at": "2026-09-08T13:56:25.3248177Z",
+    "customer_values_recorded": false,
+    "http_status": 200,
+    "system": "bemtevi",
+    "json_valid": true,
+    "api_status": null
+  }
+]

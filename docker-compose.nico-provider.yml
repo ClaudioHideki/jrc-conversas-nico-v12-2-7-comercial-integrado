@@ -1,0 +1,17 @@
+services:
+  web:
+    environment:
+      NICO_MODE: provider
+  worker:
+    environment:
+      NICO_MODE: provider
+  runtime:
+    env_file:
+      - local/nico.env
+      - local/nico-provider.env
+    environment:
+      NICO_MODE: provider
+      NICO_ALLOWED_ACCOUNTS: '1'
+    networks: [default, nico_provider_egress]
+networks:
+  nico_provider_egress:

@@ -1,0 +1,106 @@
+name: jrc-nico-local
+x-app: &app
+  image: jrc-nico-test:local
+  working_dir: /app
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - rails_cache:/tmp/bootsnap
+  env_file: local/nico.env
+  environment: &environment
+    RAILS_ENV: development
+    BOOTSNAP_CACHE_DIR: /tmp/bootsnap
+    NODE_ENV: development
+    POSTGRES_HOST: postgres
+    POSTGRES_DATABASE: jrc_nico_homologacao
+    POSTGRES_USERNAME: postgres
+    REDIS_URL: redis://redis:6379/0
+    FRONTEND_URL: http://localhost:3107
+    ACTIVE_STORAGE_SERVICE: local
+    VITE_RUBY_HOST: 127.0.0.1
+    VITE_RUBY_PORT: '3036'
+    NICO_RUNTIME_URL: http://runtime:3108
+    NICO_MODE: fixture
+    LOG_LEVEL: info
+    SIDEKIQ_CONCURRENCY: '2'
+    DB_POOL_SIZE: '6'
+    ENABLE_ACCOUNT_SIGNUP: 'false'
+    JRC_NICO_LOCAL_SEED: 'true'
+    JRC_NICO_LOCAL_STATIC: 'true'
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+services:
+  web:
+    <<: *app
+    command: [sh, scripts/nico-local-web.sh]
+    healthcheck:
+      test: [CMD, curl, --fail, --max-time, '10', http://localhost:3000/health]
+      interval: 15s
+      timeout: 12s
+      retries: 30
+      start_period: 60s
+  worker:
+    <<: *app
+    command: [bundle, exec, sidekiq, -C, config/sidekiq.yml]
+  gateway:
+    image: node:24.13.0-bookworm-slim
+    command: [node, /gateway/proxy.cjs]
+    volumes: ['./scripts/nico-local-proxy.cjs:/gateway/proxy.cjs:ro']
+    networks: [default, ingress]
+    ports: ['127.0.0.1:3107:3107']
+    depends_on: [web]
+  runtime:
+    image: node:24.13.0-bookworm-slim
+    working_dir: /runtime
+    volumes:
+      - ./services/nico-runtime:/runtime
+      - runtime_modules:/runtime/node_modules
+      - runtime_data:/runtime-data
+    env_file: local/nico.env
+    environment:
+      NICO_MODE: fixture
+      NICO_PGLITE_DATA_DIR: /runtime-data/nico
+      LOG_LEVEL: error
+    command: [node, dist/server.js]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3108/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  postgres:
+    image: pgvector/pgvector:pg16
+    env_file: local/nico.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: jrc_nico_homologacao
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d jrc_nico_homologacao']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.4.0-alpine
+    volumes: [redis_data:/data]
+    command: [redis-server, --appendonly, 'yes']
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+networks:
+  ingress:
+  default:
+    internal: true
+volumes:
+  rails_cache:
+  postgres_data:
+  redis_data:
+  runtime_data:
+  node_modules:
+    external: true
+    name: jrc-nico-test_node_modules
+  runtime_modules:
+    external: true
+    name: jrc-nico-test_runtime_modules

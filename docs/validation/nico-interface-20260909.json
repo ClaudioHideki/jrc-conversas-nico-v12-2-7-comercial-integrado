@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-09",
+  "url": "http://localhost:3107",
+  "passed": true,
+  "checks": [
+    {"viewport":[1680,1000],"layout":"panel below module","module":{"x":292,"y":78,"width":1388,"height":502},"panel":{"x":292,"y":580,"width":1388,"height":420},"document_scroll_width":1680,"overlap":false},
+    {"viewport":[1920,1080],"layout":"panel beside module","module":{"x":292,"y":78,"width":1248,"height":1002},"panel":{"x":1540,"y":78,"width":380,"height":1002},"document_scroll_width":1920,"overlap":false},
+    {"viewport":[360,800],"layout":"dedicated assistant view","panel":{"x":0,"y":0,"width":360,"height":800},"footer":{"x":0,"y":631,"width":360,"height":169},"document_scroll_width":360,"mobile_menu_over_voice_controls":false}
+  ],
+  "flows": {
+    "contact_created_in_browser":50,
+    "review_and_confirm":true,
+    "receipt_opens_exact_contact":true,
+    "history_persists_between_modules_and_reload":true,
+    "three_conversation_selection_and_preview":true,
+    "preview_cancelled_without_new_delegation":true,
+    "three_test_delegations_paused":true,
+    "approved_public_knowledge_control_visible":true,
+    "seven_specialist_profiles_available":true,
+    "mobile_receipt_navigates_and_collapses_assistant":true,
+    "microphone_not_activated":true
+  },
+  "viewport_restored":true
+}

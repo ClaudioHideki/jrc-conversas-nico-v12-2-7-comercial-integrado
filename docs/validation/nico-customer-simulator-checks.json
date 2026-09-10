@@ -1,0 +1,15 @@
+{
+  "validated_at": "2026-09-10T12:25:02.3199819Z",
+  "conversation_id": 14,
+  "automatic_client_turns": 3,
+  "matched_nico_reply_ids": [
+    51,
+    53,
+    55
+  ],
+  "memory_reply_id": 49,
+  "active": true,
+  "expires_at": "2026-09-10T14:22:22.961Z",
+  "runtime_tests_passed": 16,
+  "residual_issue": "Repetição da qualificação ao reiniciar o roteiro; não considera fluidez totalmente resolvida."
+}

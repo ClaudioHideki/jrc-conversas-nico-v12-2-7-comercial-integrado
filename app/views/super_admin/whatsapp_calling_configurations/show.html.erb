@@ -1,0 +1,142 @@
+<% content_for(:title) { 'WhatsApp Business Calling' } %>
+
+<header class="main-content__header" role="banner">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-600">Integração oficial da Meta</p>
+    <h1 class="main-content__page-title">WhatsApp Business Calling</h1>
+  </div>
+</header>
+
+<section class="main-content__body">
+  <div class="mx-auto max-w-3xl space-y-6">
+    <div class="rounded-xl border border-slate-200 bg-white p-5">
+      <%= form_with url: super_admin_whatsapp_calling_configuration_path, method: :get, local: true, class: 'flex items-end gap-3' do %>
+        <div class="flex-1">
+          <%= label_tag :account_id, 'Conta/cliente', class: 'mb-1 block text-sm font-medium text-slate-700' %>
+          <%= select_tag :account_id, options_from_collection_for_select(@accounts, :id, :name, @account.id), class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900' %>
+        </div>
+        <%= submit_tag 'Selecionar', class: 'button' %>
+      <% end %>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-6">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900"><%= @account.name %></h2>
+          <p class="mt-1 text-sm text-slate-600">Credenciais exclusivas para chamadas. Não são exibidas aos agentes.</p>
+        </div>
+        <% status_classes = { 'configured' => 'border-green-200 bg-green-50 text-green-700', 'error' => 'border-red-200 bg-red-50 text-red-700' } %>
+        <% status_labels = { 'not_configured' => 'Não configurado', 'configured' => 'Configurado', 'error' => 'Erro' } %>
+        <span class="rounded-full border px-3 py-1.5 text-xs font-medium <%= status_classes.fetch(@configuration.configuration_status, 'border-slate-200 bg-slate-50 text-slate-600') %>">
+          <%= status_labels.fetch(@configuration.configuration_status) %>
+        </span>
+      </div>
+
+      <%= form_with model: @configuration, url: super_admin_whatsapp_calling_configuration_path(account_id: @account.id), method: :patch, local: true, class: 'space-y-5' do |form| %>
+        <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-4">
+          <%= form.check_box :enabled, { class: 'h-4 w-4 rounded border-slate-300 text-emerald-600' }, '1', '0' %>
+          <span>
+            <strong class="block text-sm text-slate-900">Ativar WhatsApp Calling</strong>
+            <small class="text-slate-600">A ativação só fica disponível ao agente após um teste válido.</small>
+          </span>
+        </label>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <%= form.label :waba_id, 'WABA ID', class: 'mb-1 block text-sm font-medium text-slate-700' %>
+            <%= form.text_field :waba_id, inputmode: 'numeric', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900', autocomplete: 'off' %>
+          </div>
+          <div>
+            <%= form.label :phone_number_id, 'Phone Number ID', class: 'mb-1 block text-sm font-medium text-slate-700' %>
+            <%= form.text_field :phone_number_id, inputmode: 'numeric', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900', autocomplete: 'off' %>
+          </div>
+        </div>
+
+        <div>
+          <%= form.label :access_token, 'Access Token / credencial', class: 'mb-1 block text-sm font-medium text-slate-700' %>
+          <%= form.password_field :access_token, value: nil, required: @configuration.access_token.blank?, autocomplete: 'new-password', placeholder: @configuration.access_token.present? ? 'Token protegido — deixe em branco para preservar' : 'Informe a credencial da Meta', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900' %>
+          <p class="mt-1 text-xs text-slate-500">O token nunca é apresentado novamente depois de salvo.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <%= form.submit 'Salvar configuração', class: 'button' %>
+        </div>
+      <% end %>
+      <% if @configuration.persisted? %>
+        <%= button_to 'Testar configuração',
+                      test_configuration_super_admin_whatsapp_calling_configuration_path(account_id: @account.id),
+                      method: :post,
+                      form: { class: 'mt-3' },
+                      class: 'button button--secondary' %>
+      <% end %>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-6">
+      <div class="mb-5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-600">Caixas WhatsApp Cloud</p>
+        <h2 class="mt-1 text-lg font-semibold text-slate-900">Ativação por caixa de entrada</h2>
+        <p class="mt-1 text-sm text-slate-600">Somente a caixa com o mesmo Phone Number ID da configuração pode ser habilitada.</p>
+      </div>
+
+      <% if @whatsapp_cloud_inboxes.any? %>
+        <div class="space-y-3">
+          <% @whatsapp_cloud_inboxes.each do |inbox| %>
+            <% channel = inbox.channel %>
+            <% phone_number_id = channel.provider_config['phone_number_id'].to_s %>
+            <% compatible = @configuration.phone_number_id.to_s.present? && @configuration.phone_number_id.to_s == phone_number_id %>
+            <% calling_enabled = channel.voice_enabled? %>
+            <% calling_flag_enabled = channel.provider_config['calling_enabled'].present? %>
+            <% calling_pending_configuration = calling_flag_enabled && !calling_enabled %>
+            <div class="rounded-lg border border-slate-200 p-4">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <strong class="block text-sm text-slate-900"><%= inbox.name %></strong>
+                  <span class="mt-1 block text-sm text-slate-600"><%= channel.phone_number %></span>
+                  <span class="mt-1 block text-xs text-slate-500">Phone Number ID: <%= phone_number_id.presence || 'Não informado' %></span>
+                  <% unless compatible %>
+                    <span class="mt-2 block text-xs font-medium text-red-600">Esta caixa WhatsApp Cloud não corresponde ao Phone Number ID configurado no WhatsApp Calling.</span>
+                  <% end %>
+                </div>
+                <div class="text-right">
+                  <% badge_class = if calling_enabled
+                                     'bg-green-50 text-green-700'
+                                   elsif calling_pending_configuration
+                                     'bg-amber-50 text-amber-700'
+                                   else
+                                     'bg-slate-100 text-slate-600'
+                                   end %>
+                  <% badge_label = if calling_enabled
+                                     'Chamadas habilitadas'
+                                   elsif calling_pending_configuration
+                                     'Aguardando configuração válida'
+                                   else
+                                     'Chamadas desabilitadas'
+                                   end %>
+                  <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium <%= badge_class %>">
+                    <%= badge_label %>
+                  </span>
+                  <div class="mt-3">
+                    <% if calling_flag_enabled %>
+                      <%= button_to 'Desabilitar',
+                                    disable_inbox_calling_super_admin_whatsapp_calling_configuration_path(account_id: @account.id, inbox_id: inbox.id),
+                                    method: :post,
+                                    class: 'button button--secondary' %>
+                    <% else %>
+                      <%= button_to 'Habilitar chamadas nesta caixa',
+                                    enable_inbox_calling_super_admin_whatsapp_calling_configuration_path(account_id: @account.id, inbox_id: inbox.id),
+                                    method: :post,
+                                    disabled: !compatible || !@configuration.ready?,
+                                    class: 'button' %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">Nenhuma caixa WhatsApp Cloud foi encontrada nesta conta.</p>
+      <% end %>
+    </div>
+  </div>
+</section>

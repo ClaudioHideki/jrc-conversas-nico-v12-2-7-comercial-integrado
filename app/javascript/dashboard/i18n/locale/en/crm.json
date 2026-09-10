@@ -1,0 +1,70 @@
+{
+  "CRM": {
+    "SIDEBAR": "CRM",
+    "TITLE": "CRM",
+    "CANCEL": "Cancelar",
+    "LOSS": {
+      "TITLE": "Marcar negócio como perdido",
+      "SELECT": "Selecione o motivo da perda",
+      "CONFIRM": "Confirmar perda"
+    },
+    "NAV": {
+      "DASHBOARD": "Visão Geral",
+      "INDICATORS": "Indicadores",
+      "LEADS": "Leads",
+      "DEALS": "Negócios",
+      "FUNNEL": "Funil",
+      "WALLET": "Minha Carteira",
+      "ACTIVITIES": "Atividades",
+      "CALENDAR": "Agenda",
+      "PRODUCTS": "Produtos",
+      "PROPOSALS": "Propostas"
+    },
+    "INDICATORS": {
+      "EYEBROW": "Inteligência comercial",
+      "TITLE": "Indicadores do CRM",
+      "SUBTITLE": "Analise resultados, conversões e produtividade usando os dados reais da operação.",
+      "PERIOD_30": "Últimos 30 dias",
+      "PERIOD_90": "Últimos 90 dias",
+      "PERIOD_YEAR": "Este ano",
+      "REFRESH": "Atualizar",
+      "LEADS": "Leads criados",
+      "OPEN_DEALS": "Negócios abertos",
+      "PIPELINE": "Valor no pipeline",
+      "WON_REVENUE": "Receita ganha",
+      "CONVERSION": "Conversão",
+      "AVG_TICKET": "Ticket médio",
+      "FUNNEL": "Distribuição do funil",
+      "SOURCES": "Origem dos leads",
+      "LEAD_LIFECYCLE": "Situação dos leads",
+      "DEAL_RESULTS": "Resultado dos negócios",
+      "PROPOSALS": "Status das propostas",
+      "PRODUCTIVITY": "Produtividade comercial",
+      "COMPLETED": "Concluídas",
+      "PENDING": "Pendentes",
+      "OVERDUE": "Atrasadas",
+      "REVENUE_OWNER": "Receita ganha por responsável",
+      "EMPTY": "Ainda não há dados neste período.",
+      "LOADING": "Carregando indicadores…",
+      "LOAD_ERROR": "Não foi possível carregar os indicadores.",
+      "STATUS": {
+        "NEW": "Novo",
+        "IN_CONTACT": "Em contato",
+        "QUALIFIED": "Qualificado",
+        "UNQUALIFIED": "Desqualificado",
+        "CONVERTED": "Convertido",
+        "OPEN": "Aberto",
+        "WON": "Ganho",
+        "LOST": "Perdido",
+        "ARCHIVED": "Arquivado",
+        "DRAFT": "Rascunho",
+        "SENT": "Enviada",
+        "VIEWED": "Visualizada",
+        "ACCEPTED": "Aceita",
+        "REJECTED": "Recusada",
+        "CANCELED": "Cancelada",
+        "UNKNOWN": "Não informado"
+      }
+    }
+  }
+}

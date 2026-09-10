@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "application_database_unchanged": true,
+  "restored_database": "jrc_nico_restore_validation_20260907",
+  "account_count": 2,
+  "backup": "nico-20260907T151002384Z-643adda9.sql"
+}

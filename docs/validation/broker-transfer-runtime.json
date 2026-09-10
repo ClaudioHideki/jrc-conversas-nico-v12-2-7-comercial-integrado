@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-07",
+  "compose_initialization": "passed",
+  "database": "new isolated broker database",
+  "api_health": "passed",
+  "evolution_internal_http": 200,
+  "compiled_api_files_compared": 78,
+  "compiled_api_mismatches": [],
+  "linux_restore_shell_syntax": "passed",
+  "windows_restore_parser": "passed",
+  "whatsapp_pairing_tested": false,
+  "broker_conversas_messaging_integration": "not implemented",
+  "second_physical_machine_tested": false
+}

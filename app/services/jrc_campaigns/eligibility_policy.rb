@@ -1,0 +1,50 @@
+class JrcCampaigns::EligibilityPolicy
+  def initialize(account:, phone_number:, contact: nil)
+    @account = account
+    @phone_number = JrcCampaigns::PhoneNormalizer.call(phone_number)
+    @contact = contact
+  end
+
+  def rejection_reason
+    return 'Telefone inválido.' if phone_number.blank?
+    return 'Destinatário na blacklist.' if account.jrc_campaign_blacklists.exists?(phone_number: phone_number)
+    return 'Contato bloqueado.' if blocked?
+    return 'Consentimento positivo não registrado ou revogado.' unless JrcCampaigns::Consent.active.exists?(account: account,
+                                                                                                            phone_number: phone_number)
+
+    nil
+  end
+
+  def freeform_conversation!(inbox)
+    conversation = conversation_for_phone(inbox)
+    unless conversation && Conversations::MessageWindowService.new(conversation).can_reply?
+      raise ArgumentError, 'Mensagem livre fora da janela de atendimento; use template aprovado da Meta.'
+    end
+
+    conversation
+  end
+
+  private
+
+  attr_reader :account, :phone_number, :contact
+
+  def conversation_for_phone(inbox)
+    existing_contact = contact || account.contacts.find_by(phone_number: phone_number)
+    return unless existing_contact
+
+    links = existing_contact.contact_inboxes.where(inbox: inbox).select do |link|
+      JrcCampaigns::PhoneNormalizer.call(link.source_id) == phone_number
+    end
+    existing_contact.conversations.where(inbox: inbox, contact_inbox_id: links.map(&:id)).order(updated_at: :desc).first
+  end
+
+  def blocked?
+    contact&.reload&.blocked? || blocked_phone?
+  end
+
+  def blocked_phone?
+    account.contacts.where(blocked: true).where.not(phone_number: [nil, '']).pluck(:phone_number).any? do |number|
+      JrcCampaigns::PhoneNormalizer.call(number) == phone_number
+    end
+  end
+end

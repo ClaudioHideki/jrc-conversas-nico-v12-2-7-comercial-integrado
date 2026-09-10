@@ -1,0 +1,13 @@
+volumes:
+  node_modules:
+    external: true
+    name: jrc-nico-transfer_node_modules
+  runtime_modules:
+    external: true
+    name: jrc-nico-transfer_runtime_modules
+  runtime_data:
+    external: true
+    name: jrc-nico-transfer_runtime_data
+  redis_data:
+    external: true
+    name: jrc-nico-transfer_redis_data

@@ -1,0 +1,12 @@
+{
+  "vue_build": "pending_destination",
+  "node_tests": 20,
+  "failed": 0,
+  "typescript_build": "pending_destination",
+  "at": "2026-09-08T14:51:02.7423790Z",
+  "passed": 20,
+  "rails_tests": "pending_destination",
+  "node_syntax": "passed",
+  "powershell_syntax": "passed",
+  "full_e2e": "pending_destination"
+}

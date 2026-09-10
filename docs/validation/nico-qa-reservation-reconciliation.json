@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-09T19:30:03Z",
+  "account_id": 1,
+  "reason": "Reserva conservadora das três tentativas fictícias iniciais ajustada ao dobro do limite de bytes reconstruído, mais margem; consumo real continua desconhecido, não foi zerado.",
+  "reconstructed_upper_bound": 43526,
+  "entries": [
+    {
+      "inference_id": 1,
+      "previous_reservation": 270000,
+      "reservation": 100000,
+      "status": "unknown"
+    },
+    {
+      "inference_id": 2,
+      "previous_reservation": 270000,
+      "reservation": 100000,
+      "status": "unknown"
+    },
+    {
+      "inference_id": 3,
+      "previous_reservation": 270000,
+      "reservation": 100000,
+      "status": "unknown"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "at": "2026-09-08T14:26:27.550Z",
+  "user": {
+    "ok": true,
+    "root_keys": [
+      "usuario"
+    ],
+    "count": 1,
+    "record_keys": [
+      "usuario"
+    ]
+  },
+  "charges_schema": {
+    "ok": true,
+    "root_keys": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "count": 6,
+    "record_keys": [
+      "cod_cliente",
+      "valorcobranca",
+      "codcobranca",
+      "datavencimento",
+      "codplano"
+    ]
+  },
+  "tickets_schema": {
+    "ok": true,
+    "root_keys": [
+      "tickets",
+      "total",
+      "page",
+      "limit",
+      "totalPages"
+    ],
+    "count": 1,
+    "record_keys": [
+      "COD_SOLICITACAO",
+      "NOM_ASSUNTO",
+      "DES_SOLICITACAO",
+      "COD_USUARIO",
+      "COD_EMPRESA",
+      "COD_STATUS",
+      "COD_TIPO",
+      "COD_PRIORIDADE",
+      "COD_ITEM",
+      "COD_SERVICO",
+      "DAT_CADASTRO",
+      "DAT_ENCERRAMENTO"
+    ]
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "at": "2026-09-09T19:22:53.086Z",
+  "commands": [
+    {
+      "tool": "create_contact",
+      "command_id": 5,
+      "result": {
+        "record": {
+          "id": 49,
+          "name": "Teste NICO Operador 1776083",
+          "email": "nico-operador-1776083@example.test",
+          "phone_number": null
+        },
+        "message": "Contato criado",
+        "route_name": "contacts_dashboard_index",
+        "resource_type": "Contact"
+      }
+    },
+    {
+      "tool": "create_lead",
+      "command_id": 6,
+      "result": {
+        "record": {
+          "id": 13,
+          "name": "Teste NICO Operador 1776083",
+          "email": "nico-operador-1776083@example.test",
+          "status": "new",
+          "contact_id": 49
+        },
+        "message": "Lead criado ou reutilizado",
+        "route_name": "crm_leads",
+        "resource_type": "JrcCrm::Lead"
+      }
+    },
+    {
+      "tool": "create_activity",
+      "command_id": 7,
+      "result": {
+        "record": {
+          "id": 7,
+          "title": "Retorno NICO QA",
+          "due_at": "2026-09-10T10:00:00.000Z",
+          "status": "scheduled",
+          "deal_id": null,
+          "lead_id": 13,
+          "contact_id": null
+        },
+        "message": "Atividade agendada; não envia mensagem nem inicia ligação",
+        "route_name": "crm_activities",
+        "resource_type": "JrcCrm::Activity"
+      }
+    },
+    {
+      "tool": "delegate_conversations",
+      "command_id": 8,
+      "result": [
+        {
+          "id": 1,
+          "reason": null,
+          "status": "active",
+          "summary": null,
+          "allow_crm": false,
+          "objective": "Apresente-se como assistente virtual e pergunte qual solução e quantidade o cliente procura. Somente qualificação, sem preços ou compromissos.",
+          "expires_at": "2026-09-09T20:23:06.724Z",
+          "contact_name": "NICO QA Cliente 1",
+          "conversation_id": 11
+        },
+        {
+          "id": 2,
+          "reason": null,
+          "status": "active",
+          "summary": null,
+          "allow_crm": false,
+          "objective": "Apresente-se como assistente virtual e pergunte qual solução e quantidade o cliente procura. Somente qualificação, sem preços ou compromissos.",
+          "expires_at": "2026-09-09T20:23:06.830Z",
+          "contact_name": "NICO QA Cliente 2",
+          "conversation_id": 12
+        },
+        {
+          "id": 3,
+          "reason": null,
+          "status": "active",
+          "summary": null,
+          "allow_crm": false,
+          "objective": "Apresente-se como assistente virtual e pergunte qual solução e quantidade o cliente procura. Somente qualificação, sem preços ou compromissos.",
+          "expires_at": "2026-09-09T20:23:06.863Z",
+          "contact_name": "NICO QA Cliente 3",
+          "conversation_id": 13
+        }
+      ]
+    }
+  ],
+  "customers": [
+    {
+      "conversation_id": 11,
+      "message_id": 24,
+      "reply": "Olá! Eu sou o NICO, assistente virtual da GoPure Homologação. Para que eu possa ajudar melhor, você poderia me informar qual solução você tem interesse e a quantidade que deseja?",
+      "state": "sent"
+    },
+    {
+      "conversation_id": 12,
+      "message_id": 25,
+      "reply": "Olá! Eu sou o NICO, assistente virtual da GoPure Homologação. Para que eu possa ajudar melhor, você poderia me informar qual solução você tem interesse e a quantidade que deseja?",
+      "state": "sent"
+    },
+    {
+      "conversation_id": 13,
+      "message_id": 26,
+      "reply": "Olá! Eu sou o NICO, assistente virtual da GoPure Homologação. Para que eu possa ajudar melhor, você poderia me informar qual solução você tem interesse e a quantidade que deseja?",
+      "state": "sent"
+    }
+  ],
+  "passed": true
+}

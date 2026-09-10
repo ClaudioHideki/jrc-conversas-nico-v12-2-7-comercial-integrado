@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "at": "2026-09-07T15:38:00.294Z",
+  "mode": "fixture",
+  "results": [
+    {
+      "account_id": 1,
+      "run_id": 1,
+      "status": "completed",
+      "mode": "fixture",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:1"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:1"
+        },
+        {
+          "source": "knowledge",
+          "reference": "document:1:a8f2e291e851"
+        }
+      ]
+    },
+    {
+      "account_id": 2,
+      "run_id": 2,
+      "status": "completed",
+      "mode": "fixture",
+      "evidence": [
+        {
+          "source": "conversation",
+          "reference": "message:2"
+        },
+        {
+          "source": "crm",
+          "reference": "lead:2"
+        },
+        {
+          "source": "knowledge",
+          "reference": "document:2:a8f2e291e851"
+        }
+      ]
+    }
+  ],
+  "proposal_id": 1,
+  "activity_id": 1,
+  "isolation": true,
+  "operator_restrictions": true,
+  "public_messages_unchanged": true
+}

@@ -1,0 +1,98 @@
+{
+  "WHATSAPP_CALLING": {
+    "TITLE": "Chamadas pelo WhatsApp",
+    "META_OFFICIAL": "Integração oficial da Meta",
+    "ACTIVE": "Ativo",
+    "INACTIVE": "Inativo",
+    "STATUS": {
+      "AWAITING_META": "A aguardar configuração da Meta",
+      "AWAITING_INBOX": "A aguardar ativação de uma caixa WhatsApp Cloud",
+      "VALIDATED": "Configuração oficial da Meta validada"
+    },
+    "CALL_STATE": {
+      "INCOMING": "A receber chamada",
+      "CALLING": "A chamar",
+      "IN_PROGRESS": "Em chamada",
+      "ENDED": "Terminada",
+      "FAILED": "Falhou"
+    },
+    "PHONE_LABEL": "Número do WhatsApp",
+    "PHONE_PLACEHOLDER": "Ex.: 351912345678",
+    "PHONE_HELP": "Introduza o número com DDI ou selecione um contacto ao lado.",
+    "CLEAR_NUMBER": "Limpar número",
+    "INBOX_LABEL": "Caixa WhatsApp",
+    "CALL_BUTTON": "Ligar pelo WhatsApp",
+    "CONTROLS": {
+      "MUTE": "Silenciar",
+      "UNMUTE": "Ativar áudio",
+      "CALL": "Ligar",
+      "END": "Desligar"
+    },
+    "MODULE_NOTE": "Módulo independente do Ramal/PABX. São utilizados apenas recursos suportados pela solução oficial da Meta.",
+    "HELP": {
+      "NOT_CONFIGURED": "As chamadas pelo WhatsApp ainda não estão configuradas.",
+      "NO_INBOX": "Nenhuma caixa WhatsApp Cloud está habilitada para chamadas.",
+      "INVALID_NUMBER": "Introduza um número válido com DDI.",
+      "CHECK_PERMISSION": "Verifique a autorização do cliente para liberar a chamada.",
+      "READY": "A chamada utilizará a integração oficial da Meta."
+    },
+    "ALERT": {
+      "PERMISSION_REQUESTED": "A permissão de chamada foi solicitada ao contacto. Nenhuma chamada foi simulada.",
+      "PERMISSION_REQUEST_FAILED": "Não foi possível enviar a solicitação de permissão de chamada.",
+      "CALL_FAILED": "Falha ao iniciar a chamada pelo WhatsApp.",
+      "END_FAILED": "Falha ao terminar a chamada pelo WhatsApp."
+    },
+    "PERMISSION": {
+      "CHECK_REQUIRED": "Verifique se este cliente autorizou chamadas pelo WhatsApp.",
+      "APPROVED": "Permissão aprovada. Pronto para ligar.",
+      "REQUIRED": "Este cliente ainda não autorizou chamadas pelo WhatsApp.",
+      "REQUESTED": "Solicitação enviada. Aguarde a aprovação no WhatsApp.",
+      "PENDING": "A aguardar autorização do cliente.",
+      "DENIED": "O cliente não autorizou chamadas pelo WhatsApp.",
+      "EXPIRED": "A permissão de chamada expirou.",
+      "UNAVAILABLE": "Não foi possível consultar a permissão de chamada na Meta.",
+      "CREDENTIAL_INVALID": "A credencial da Meta precisa ser atualizada pelo administrador.",
+      "CHECK_ACTION": "Verificar permissão novamente",
+      "REQUEST_ACTION": "Solicitar permissão"
+    },
+    "HISTORY": {
+      "TITLE": "Histórico de chamadas",
+      "TOTAL": "Total de chamadas",
+      "ANSWERED": "Atendidas",
+      "MISSED": "Não atendidas",
+      "TODAY": "Hoje",
+      "DAYS": "{count} dias",
+      "ALL_DIRECTIONS": "Todas as direções",
+      "INBOUND_PLURAL": "Recebidas",
+      "OUTBOUND_PLURAL": "Realizadas",
+      "ALL_STATUSES": "Todos os estados",
+      "FAILED": "Falhou",
+      "EMPTY_TITLE": "Nenhuma chamada disponível",
+      "EMPTY_DESCRIPTION": "Nenhum registo real foi encontrado para os filtros selecionados.",
+      "INBOUND": "Recebida",
+      "OUTBOUND": "Realizada",
+      "STATUS": {
+        "RINGING": "A chamar",
+        "IN_PROGRESS": "Em chamada",
+        "COMPLETED": "Atendida",
+        "NO_ANSWER": "Não atendida",
+        "FAILED": "Falhou",
+        "REJECTED": "Recusada"
+      }
+    },
+    "SIDEBAR": {
+      "TITLE": "WhatsApp Calling",
+      "GENERAL_DIALER": "Discador geral",
+      "NUMBER_HELP": "Use o telefone do contato ou digite qualquer número.",
+      "AVAILABLE": "Disponível",
+      "NOT_CONFIGURED": "Ative o WhatsApp Calling nas configurações.",
+      "ENTER_NUMBER": "Informe um número para realizar a chamada.",
+      "CHECKING_PERMISSION": "Verificando permissão de chamada...",
+      "KEYPAD": "Teclado",
+      "HIDE_KEYPAD": "Ocultar teclado",
+      "ANSWER": "Atender",
+      "BACKSPACE": "Apagar último dígito",
+      "CLEAR": "Limpar"
+    }
+  }
+}

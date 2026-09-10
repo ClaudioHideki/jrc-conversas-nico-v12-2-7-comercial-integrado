@@ -1,0 +1,27 @@
+# == Schema Information
+#
+# Table name: sales_pipelines
+#
+#  id         :bigint           not null, primary key
+#  active     :boolean          default(TRUE), not null
+#  name       :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  account_id :integer          not null
+#
+# Indexes
+#
+#  index_sales_pipelines_on_account_id           (account_id)
+#  index_sales_pipelines_on_account_id_and_name  (account_id,name) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
+class SalesPipeline < ApplicationRecord
+  belongs_to :account
+  has_many :sales_stages, -> { order(:position) }, dependent: :destroy
+  has_many :sales_opportunities, dependent: :restrict_with_error
+
+  validates :name, presence: true, uniqueness: { scope: :account_id }
+end

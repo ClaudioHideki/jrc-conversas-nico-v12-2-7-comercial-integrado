@@ -1,0 +1,37 @@
+{
+  "tool": "brakeman",
+  "version": "5.4.1",
+  "warnings": 37,
+  "parse_errors": 6,
+  "limitations": "Scanner legado; seis arquivos não analisados. Não é atestado de segurança.",
+  "by_category": [
+    {
+      "type": "Cross-Site Scripting",
+      "count": 1
+    },
+    {
+      "type": "Dangerous Send",
+      "count": 3
+    },
+    {
+      "type": "Format Validation",
+      "count": 1
+    },
+    {
+      "type": "Mass Assignment",
+      "count": 16
+    },
+    {
+      "type": "SQL Injection",
+      "count": 16
+    }
+  ],
+  "errors": [
+    "app/models/user.rb:133 :: parse error on value \")\" (tRPAREN) Could not parse app/models/user.rb",
+    "app/services/data_imports/intercom/client.rb:18 :: parse error on value \")\" (tRPAREN) Could not parse app/services/data_imports/intercom/client.rb",
+    "enterprise/app/models/concerns/toolable.rb:36 :: parse error on value \")\" (tRPAREN) Could not parse enterprise/app/models/concerns/toolable.rb",
+    "enterprise/app/services/captain/tool_registry_service.rb:21 :: parse error on value \")\" (tRPAREN) Could not parse enterprise/app/services/captain/tool_registry_service.rb",
+    "enterprise/app/services/whatsapp/call_service.rb:80 :: parse error on value \")\" (tRPAREN) Could not parse enterprise/app/services/whatsapp/call_service.rb",
+    "lib/safe_fetch.rb:29 :: parse error on value \")\" (tRPAREN) Could not parse lib/safe_fetch.rb"
+  ]
+}

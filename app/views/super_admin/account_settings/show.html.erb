@@ -1,0 +1,300 @@
+<% content_for(:title) do %>
+  Configurações da Conta — <%= settings_sections[@section] %>
+<% end %>
+
+<header class="flex items-center border-b border-n-weak px-8 py-4" role="banner">
+  <div class="mr-4 rounded-full border border-n-weak p-2">
+    <svg width="24" height="24"><use xlink:href="#icon-settings-2-line" /></svg>
+  </div>
+  <div class="flex flex-col justify-center">
+    <h1 class="text-base font-medium leading-6 text-n-slate-12" id="page-title">Configurações da Conta</h1>
+    <p class="m-0 text-sm font-normal leading-5 text-slate-500">Administre a conta selecionada sem impersonação e sem alterar a sessão de User.</p>
+  </div>
+</header>
+
+<section class="main-content__body px-8 py-6">
+  <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,1fr)_auto] lg:items-end">
+      <label>
+        <span class="mb-2 block text-sm font-medium text-slate-800">Cliente / Conta</span>
+        <select
+          class="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none"
+          onchange="if (this.value) window.location.href = '/super_admin/accounts/' + this.value + '/settings/<%= @section %>'"
+        >
+          <% @accounts.each do |account| %>
+            <option value="<%= account.id %>" <%= 'selected' if account.id == @account.id %>><%= account.name %></option>
+          <% end %>
+        </select>
+      </label>
+      <div class="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        Conta selecionada: <strong class="text-slate-900"><%= @account.name %></strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-6 overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+    <nav class="flex min-w-max gap-1">
+      <% settings_sections.each do |section, label| %>
+        <%= link_to label,
+                    account_setting_path(section),
+                    class: "rounded-lg px-3 py-2 text-sm font-medium #{section == @section ? 'bg-woot-500 text-white' : 'text-slate-700 hover:bg-slate-50'}" %>
+      <% end %>
+    </nav>
+  </div>
+
+  <% case @section %>
+  <% when 'general' %>
+    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Conta</h2>
+      <%= form_with url: account_setting_resource_path('account', @account.id), method: :patch, local: true do %>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Nome da conta</span>
+            <%= text_field_tag 'account[name]', @account.name, required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Idioma</span>
+            <%= select_tag 'account[locale]', options_for_select(Account.locales.keys.map { |locale| [locale, locale] }, @account.locale), class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Domínio de e-mail</span>
+            <%= text_field_tag 'account[domain]', @account.domain, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">E-mail de suporte</span>
+            <%= email_field_tag 'account[support_email]', @account.support_email, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Status</span>
+            <%= select_tag 'account[status]', options_for_select(Account.statuses.keys, @account.status), class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Auto resolver após</span>
+            <%= number_field_tag 'account[auto_resolve_duration]', @account.auto_resolve_duration, min: 0, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900' %>
+          </label>
+        </div>
+        <%= submit_tag 'Salvar conta', class: 'mt-6 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 py-3 text-sm font-medium text-white hover:bg-woot-600' %>
+      <% end %>
+    </section>
+
+  <% when 'agents' %>
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Adicionar agente</h2>
+      <%= form_with url: account_setting_resource_path('agent'), method: :post, local: true, class: 'grid grid-cols-1 gap-4 lg:grid-cols-5' do %>
+        <%= text_field_tag 'agent[name]', nil, placeholder: 'Nome', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= email_field_tag 'agent[email]', nil, placeholder: 'email@dominio.com', required: true, class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= select_tag 'agent[role]', options_for_select(AccountUser.roles.keys), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= select_tag 'agent[availability]', options_for_select(AccountUser.availabilities.keys, 'offline'), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= submit_tag 'Adicionar', class: 'h-11 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 text-sm font-medium text-white' %>
+      <% end %>
+    </section>
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 px-5 py-4 text-sm font-semibold text-slate-900"><%= @agents.size %> agente(s)</div>
+      <div class="divide-y divide-slate-100">
+        <% @agents.each do |agent| %>
+          <% account_user = agent.account_users.find { |item| item.account_id == @account.id } %>
+          <div class="grid grid-cols-1 gap-3 p-4 xl:grid-cols-[1fr_auto] xl:items-center">
+            <%= form_with url: account_setting_resource_path('agent', account_user.id), method: :patch, local: true, class: 'grid grid-cols-1 gap-3 md:grid-cols-4' do %>
+              <%= text_field_tag 'agent[name]', agent.name, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+              <input class="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500" value="<%= agent.email %>" disabled>
+              <%= select_tag 'agent[role]', options_for_select(AccountUser.roles.keys, account_user.role), class: 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+              <div class="flex gap-2">
+                <%= select_tag 'agent[availability]', options_for_select(AccountUser.availabilities.keys, account_user.availability), class: 'h-10 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+                <%= submit_tag 'Salvar', class: 'h-10 cursor-pointer rounded-lg border-0 bg-woot-500 px-4 text-sm font-medium text-white' %>
+              </div>
+            <% end %>
+            <%= button_to 'Remover da conta',
+                          account_setting_resource_path('agent', account_user.id),
+                          method: :delete,
+                          form: { data: { turbo_confirm: 'Remover este usuário desta conta?' } },
+                          class: 'h-10 cursor-pointer rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700' %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+  <% when 'teams' %>
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Criar time</h2>
+      <%= form_with url: account_setting_resource_path('team'), method: :post, local: true, class: 'grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr_1fr_auto]' do %>
+        <%= text_field_tag 'team[name]', nil, placeholder: 'Nome', required: true, class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= text_field_tag 'team[description]', nil, placeholder: 'Descrição', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= select_tag 'team[member_ids][]', options_from_collection_for_select(@agents, :id, :available_name), multiple: true, class: 'min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= submit_tag 'Criar', class: 'h-11 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 text-sm font-medium text-white' %>
+      <% end %>
+    </section>
+    <div class="grid grid-cols-1 gap-4">
+      <% @teams.each do |team| %>
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <%= form_with url: account_setting_resource_path('team', team.id), method: :patch, local: true, class: 'grid grid-cols-1 gap-3 lg:grid-cols-[1fr_2fr_2fr_auto]' do %>
+            <%= text_field_tag 'team[name]', team.name, required: true, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <%= text_field_tag 'team[description]', team.description, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <%= select_tag 'team[member_ids][]', options_from_collection_for_select(@agents, :id, :available_name, team.member_ids), multiple: true, class: 'min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+            <%= submit_tag 'Salvar', class: 'h-10 cursor-pointer rounded-lg border-0 bg-woot-500 px-4 text-sm font-medium text-white' %>
+          <% end %>
+          <%= button_to 'Excluir time', account_setting_resource_path('team', team.id), method: :delete, form: { class: 'mt-3', data: { turbo_confirm: 'Excluir este time?' } }, class: 'rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700' %>
+        </section>
+      <% end %>
+    </div>
+
+  <% when 'inboxes' %>
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Adicionar caixa de entrada</h2>
+      <%= form_with url: account_setting_resource_path('inbox'), method: :post, local: true, class: 'grid grid-cols-1 gap-4 xl:grid-cols-4' do %>
+        <%= text_field_tag 'inbox[name]', nil, placeholder: 'Nome da caixa', required: true, class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= select_tag 'inbox[channel_type]', options_for_select(SuperAdmin::AccountSettingsController::CHANNEL_TYPES.map { |key, label| [label, key] }), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= text_field_tag 'channel[webhook_url]', nil, placeholder: 'Webhook/API ou URL do site', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= email_field_tag 'channel[email]', nil, placeholder: 'Email, se canal Email', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= url_field_tag 'channel[website_url]', nil, placeholder: 'https://site.com.br', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= text_field_tag 'channel[widget_color]', '#1f93ff', placeholder: '#1f93ff', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= text_field_tag 'channel[line_channel_id]', nil, placeholder: 'LINE channel id', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= password_field_tag 'channel[line_channel_secret]', nil, placeholder: 'LINE secret', autocomplete: 'new-password', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= password_field_tag 'channel[line_channel_token]', nil, placeholder: 'LINE token', autocomplete: 'new-password', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= password_field_tag 'channel[bot_token]', nil, placeholder: 'Telegram bot token', autocomplete: 'new-password', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= text_field_tag 'channel[phone_number]', nil, placeholder: 'Telefone SMS', class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <div class="xl:col-span-4">
+          <%= submit_tag 'Criar caixa', class: 'cursor-pointer rounded-lg border-0 bg-woot-500 px-5 py-3 text-sm font-medium text-white' %>
+          <span class="ml-3 text-xs text-slate-500">Segredos de canais externos devem ser configurados apenas nos campos protegidos da edição.</span>
+        </div>
+      <% end %>
+    </section>
+    <div class="grid grid-cols-1 gap-4">
+      <% @inboxes.each do |inbox| %>
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-semibold text-slate-900"><%= inbox.name %></h3>
+              <p class="text-xs text-slate-500"><%= inbox.channel_type %> · ID <%= inbox.id %></p>
+            </div>
+            <%= button_to 'Excluir caixa', account_setting_resource_path('inbox', inbox.id), method: :delete, form: { data: { turbo_confirm: 'Excluir esta caixa de entrada?' } }, class: 'rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700' %>
+          </div>
+          <%= form_with url: account_setting_resource_path('inbox', inbox.id), method: :patch, local: true, class: 'grid grid-cols-1 gap-3 lg:grid-cols-3' do %>
+            <%= text_field_tag 'inbox[name]', inbox.name, required: true, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <%= select_tag 'inbox[member_ids][]', options_from_collection_for_select(@agents, :id, :available_name, inbox.member_ids), multiple: true, class: 'min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+            <% if inbox.api? %>
+              <%= text_field_tag 'channel[webhook_url]', inbox.channel.webhook_url, placeholder: 'Webhook URL', class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <% elsif inbox.email? %>
+              <%= email_field_tag 'channel[email]', inbox.channel.email, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <% elsif inbox.web_widget? %>
+              <%= url_field_tag 'channel[website_url]', inbox.channel.website_url, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <% elsif inbox.sms? %>
+              <%= text_field_tag 'channel[phone_number]', inbox.channel.phone_number, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <% elsif inbox.telegram? %>
+              <%= password_field_tag 'channel[bot_token]', nil, placeholder: 'Token protegido — deixe em branco para preservar', autocomplete: 'new-password', class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <% else %>
+              <input class="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500" value="Canal listado; segredos não são exibidos." disabled>
+            <% end %>
+            <%= submit_tag 'Salvar', class: 'h-10 cursor-pointer rounded-lg border-0 bg-woot-500 px-4 text-sm font-medium text-white lg:col-span-3' %>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+
+  <% when 'labels' %>
+    <%= render partial: 'simple_crud', locals: {
+      title: 'Etiquetas',
+      records: @labels,
+      resource: 'label',
+      fields: [
+        [:title, 'Título', :text],
+        [:description, 'Descrição', :text],
+        [:color, 'Cor', :color]
+      ]
+    } %>
+
+  <% when 'custom_attributes' %>
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Novo atributo personalizado</h2>
+      <%= form_with url: account_setting_resource_path('custom_attribute'), method: :post, local: true, class: 'grid grid-cols-1 gap-4 lg:grid-cols-4' do %>
+        <%= text_field_tag 'custom_attribute_definition[attribute_display_name]', nil, placeholder: 'Nome', required: true, class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= text_field_tag 'custom_attribute_definition[attribute_key]', nil, placeholder: 'chave_do_atributo', required: true, class: 'h-11 rounded-lg border border-slate-200 px-3 text-sm' %>
+        <%= select_tag 'custom_attribute_definition[attribute_model]', options_for_select(CustomAttributeDefinition.attribute_models.keys), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= select_tag 'custom_attribute_definition[attribute_display_type]', options_for_select(CustomAttributeDefinition.attribute_display_types.keys), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= submit_tag 'Criar atributo', class: 'h-11 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 text-sm font-medium text-white lg:col-span-4' %>
+      <% end %>
+    </section>
+    <div class="grid grid-cols-1 gap-4">
+      <% @custom_attributes.each do |attribute| %>
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <%= form_with url: account_setting_resource_path('custom_attribute', attribute.id), method: :patch, local: true, class: 'grid grid-cols-1 gap-3 lg:grid-cols-4' do %>
+            <%= text_field_tag 'custom_attribute_definition[attribute_display_name]', attribute.attribute_display_name, required: true, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <%= text_field_tag 'custom_attribute_definition[attribute_key]', attribute.attribute_key, required: true, class: 'h-10 rounded-lg border border-slate-200 px-3 text-sm' %>
+            <%= select_tag 'custom_attribute_definition[attribute_model]', options_for_select(CustomAttributeDefinition.attribute_models.keys, attribute.attribute_model), class: 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+            <%= select_tag 'custom_attribute_definition[attribute_display_type]', options_for_select(CustomAttributeDefinition.attribute_display_types.keys, attribute.attribute_display_type), class: 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+            <%= submit_tag 'Salvar', class: 'h-10 cursor-pointer rounded-lg border-0 bg-woot-500 px-4 text-sm font-medium text-white' %>
+          <% end %>
+          <%= button_to 'Excluir', account_setting_resource_path('custom_attribute', attribute.id), method: :delete, form: { class: 'mt-3', data: { turbo_confirm: 'Excluir este atributo?' } }, class: 'rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700' %>
+        </section>
+      <% end %>
+    </div>
+
+  <% when 'automations' %>
+    <%= render partial: 'json_crud', locals: {
+      title: 'Automação',
+      records: @automation_rules,
+      resource: 'automation',
+      name_field: :name,
+      extra_fields: [:description, :event_name],
+      json_fields: [[:conditions_json, 'Condições JSON', 'conditions'], [:actions_json, 'Ações JSON', 'actions']]
+    } %>
+
+  <% when 'agent_bots' %>
+    <%= render partial: 'simple_crud', locals: {
+      title: 'Robôs',
+      records: @agent_bots,
+      resource: 'agent_bot',
+      fields: [
+        [:name, 'Nome', :text],
+        [:description, 'Descrição', :text],
+        [:outgoing_url, 'Webhook de saída', :url]
+      ]
+    } %>
+
+  <% when 'macros' %>
+    <%= render partial: 'json_crud', locals: {
+      title: 'Macros',
+      records: @macros,
+      resource: 'macro',
+      name_field: :name,
+      extra_fields: [:visibility],
+      json_fields: [[:actions_json, 'Ações JSON', 'actions']]
+    } %>
+
+  <% when 'canned_responses' %>
+    <%= render partial: 'simple_crud', locals: {
+      title: 'Respostas Prontas',
+      records: @canned_responses,
+      resource: 'canned_response',
+      fields: [
+        [:short_code, 'Atalho', :text],
+        [:content, 'Conteúdo', :textarea]
+      ]
+    } %>
+
+  <% when 'integrations' %>
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-5 text-lg font-semibold text-slate-900">Nova integração</h2>
+      <%= form_with url: account_setting_resource_path('integration'), method: :post, local: true, class: 'grid grid-cols-1 gap-4 lg:grid-cols-4' do %>
+        <%= select_tag 'integration[app_id]', options_for_select(@available_apps.map { |app| [app.name, app.id] }), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= select_tag 'integration[status]', options_for_select(Integrations::Hook.statuses.keys), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= select_tag 'integration[hook_type]', options_for_select(Integrations::Hook.hook_types.keys), class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= select_tag 'integration[inbox_id]', options_from_collection_for_select(@inboxes, :id, :name), include_blank: 'Sem caixa', class: 'h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+        <%= text_area_tag 'integration[settings_json]', '{}', rows: 4, class: 'rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono lg:col-span-4' %>
+        <%= submit_tag 'Criar integração', class: 'h-11 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 text-sm font-medium text-white lg:col-span-4' %>
+      <% end %>
+    </section>
+    <div class="grid grid-cols-1 gap-4">
+      <% @integrations.each do |hook| %>
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 class="mb-3 text-base font-semibold text-slate-900"><%= hook.app_id %> · <%= hook.status %></h3>
+          <%= form_with url: account_setting_resource_path('integration', hook.id), method: :patch, local: true, class: 'grid grid-cols-1 gap-3 lg:grid-cols-[200px_1fr_auto]' do %>
+            <%= select_tag 'integration[status]', options_for_select(Integrations::Hook.statuses.keys, hook.status), class: 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm' %>
+            <%= text_area_tag 'integration[settings_json]', JSON.pretty_generate(hook.settings || {}), rows: 3, class: 'rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono' %>
+            <%= submit_tag 'Salvar', class: 'h-10 cursor-pointer rounded-lg border-0 bg-woot-500 px-4 text-sm font-medium text-white' %>
+          <% end %>
+          <%= button_to 'Excluir integração', account_setting_resource_path('integration', hook.id), method: :delete, form: { class: 'mt-3', data: { turbo_confirm: 'Excluir esta integração?' } }, class: 'rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700' %>
+        </section>
+      <% end %>
+    </div>
+  <% end %>
+</section>

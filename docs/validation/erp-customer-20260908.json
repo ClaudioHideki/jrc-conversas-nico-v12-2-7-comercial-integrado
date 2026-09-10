@@ -1,0 +1,258 @@
+[
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:48.0663587Z",
+    "matched_customers": [
+      {
+        "cnpj": "28240080000171",
+        "id": "536",
+        "name": "CAVALARI PARTICIPAÇÕES EIRELI"
+      }
+    ],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 1,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 200,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 82863
+  },
+  {
+    "total_pages": null,
+    "http_status": 200,
+    "system": "bemtevi",
+    "at": "2026-09-08T14:08:48.4803325Z",
+    "matched_customers": [
+      {
+        "cnpj": "28240080000171",
+        "id": 152,
+        "name": "CAVALARI PARTICIPAÇÕES EIRELI"
+      }
+    ],
+    "api_status": null,
+    "response_keys": [
+      "msg",
+      "data"
+    ],
+    "page": null,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 1,
+    "record_keys": [
+      "cod_cliente",
+      "nome",
+      "cpfcnpj",
+      "inscricaoestadual",
+      "pessoafisica",
+      "razaosocial",
+      "datahoracadastro",
+      "rg",
+      "datanascimento",
+      "nomemae",
+      "nomepai",
+      "codusuarioresponsavel",
+      "obs",
+      "datacontrato",
+      "dataativacao",
+      "datacabeamento",
+      "situacao",
+      "codsituacaogrupo",
+      "contato",
+      "centralassinantestatus",
+      "inscricaomunicipal",
+      "centralassinantelogin",
+      "centralassinantesenha",
+      "informacaocontabil",
+      "logarapenasusuariocentralassinante",
+      "nomefantasia",
+      "profissao",
+      "estadocivil",
+      "codcidadenaturalidade",
+      "codpaisnaturalidade",
+      "bloquearautomaticamentseinadimplente",
+      "codusuariocadastro",
+      "dataentregacontrato",
+      "pessoaspodemsolicitarsuportes",
+      "rgorgaoemissor",
+      "codrevenda",
+      "dataultimaatualizacaodadoscadastrais",
+      "proprietario",
+      "proprietariocpf",
+      "spc",
+      "codramoatividade",
+      "codIntegradorERP",
+      "observacaoSerasa",
+      "codholding",
+      "autonomo",
+      "prioritario",
+      "inscricaoEstadual_UF",
+      "reterISS",
+      "contribuinteParaOperacoesInterEstaduais",
+      "porteClienteEmpre",
+      "tipoCliente",
+      "ativacaoRetirarBoletoCentral",
+      "omie_CodCliente",
+      "codIntegracaoTelefonia",
+      "idPabx",
+      "cod_cli_crm",
+      "cod_cli_hd"
+    ],
+    "json_valid": true,
+    "bytes_read": 1634
+  },
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:48.7201331Z",
+    "matched_customers": [],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 2,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 200,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 82145
+  },
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:48.9782660Z",
+    "matched_customers": [],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 3,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 200,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 82737
+  },
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:49.2114215Z",
+    "matched_customers": [],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 4,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 200,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 82046
+  },
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:49.6918042Z",
+    "matched_customers": [],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 5,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 200,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 81341
+  },
+  {
+    "total_pages": 6,
+    "http_status": 200,
+    "system": "helpdesk",
+    "at": "2026-09-08T14:08:49.8507558Z",
+    "matched_customers": [],
+    "api_status": 1,
+    "response_keys": [
+      "status",
+      "msg",
+      "data"
+    ],
+    "page": 6,
+    "customer_values_recorded": "only_requested_cnpj_match",
+    "returned_records": 21,
+    "record_keys": [
+      "COD_EMPRESA",
+      "NOM_EMPRESA",
+      "NOM_FANTASIA",
+      "NUM_CNPJ",
+      "DES_EMAIL",
+      "NUM_TELEFONE",
+      "NOM_MUNICIPIO",
+      "SIG_UF"
+    ],
+    "json_valid": true,
+    "bytes_read": 8757
+  }
+]

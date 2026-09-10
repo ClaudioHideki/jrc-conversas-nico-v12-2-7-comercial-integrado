@@ -1,0 +1,12 @@
+services:
+  web:
+    networks: [default, build_egress]
+volumes:
+  node_modules:
+    external: false
+    name: jrc-gopure_node_modules
+  runtime_modules:
+    external: false
+    name: jrc-gopure_runtime_modules
+networks:
+  build_egress:

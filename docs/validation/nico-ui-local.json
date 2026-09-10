@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "at": "2026-09-07T19:58:22.280Z",
+  "login": true,
+  "main_conversation_route": true,
+  "participating_route": true,
+  "run_id": 5,
+  "mode": "fixture",
+  "human_approval": true,
+  "page_errors": []
+}

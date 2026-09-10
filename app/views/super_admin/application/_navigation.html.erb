@@ -1,0 +1,130 @@
+﻿<%#
+# Navigation
+
+This partial is used to display the navigation in Administrate.
+By default, the navigation contains navigation links
+for all resources in the admin dashboard,
+as defined by the routes in the `admin/` namespace
+%>
+
+<%= vite_client_tag %>
+<%= vite_javascript_tag 'superadmin_pages' %>
+
+<%
+  sidebar_icons = {
+    accounts: 'icon-building-4-line',
+    users: 'icon-user-follow-line',
+    platform_apps: 'icon-apps-2-line',
+    agent_bots: 'icon-robot-line',
+    platform_banners: 'icon-megaphone-line',
+  }
+  selected_account_id = params[:account_id].presence ||
+                        (params[:controller] == 'super_admin/accounts' && params[:id].presence)
+  selected_settings_section = params[:controller] == 'super_admin/account_inboxes' ? 'inboxes' : (params[:section].presence || 'general')
+  accounts_for_settings = Account.order(:name).limit(100)
+  settings_account_id = selected_account_id.presence || accounts_for_settings.first&.id
+  account_settings_links = [
+    ['Conta', 'icon-building-4-line', 'general'],
+    ['Agentes', 'icon-user-follow-line', 'agents'],
+    ['Times', 'icon-team-line', 'teams'],
+    ['Caixas de Entr...', 'icon-inbox-line', 'inboxes'],
+    ['Etiquetas', 'icon-price-tag-3-line', 'labels'],
+    ['Atributos Pers...', 'icon-code-s-slash-line', 'custom_attributes'],
+    ['Automação', 'icon-git-branch-line', 'automations'],
+    ['Robôs', 'icon-robot-line', 'agent_bots'],
+    ['Macros', 'icon-flashlight-line', 'macros'],
+    ['Respostas Pro...', 'icon-chat-quote-line', 'canned_responses'],
+    ['Integrações', 'icon-apps-2-line', 'integrations']
+  ]
+%>
+
+<div class="border-slate-100 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col" role="navigation">
+  <div>
+    <div class="flex mx-4 mb-4 border-slate-100 border-b py-6">
+      <%= link_to image_tag('/brand-assets/logo-jrc-thumbnail.png', alt: 'JRC Conversas Admin Dashboard', class: 'h-10'), super_admin_root_url %>
+      <div class="flex flex-col ml-3">
+        <div class="text-sm">JRC Conversas <%= Chatwoot.config[:version] %></div>
+        <div class="text-xs text-slate-700 mt-0.5">Super Admin Console</div>
+      </div>
+    </div>
+
+    <ul class="my-4">
+      <%= render partial: "nav_item", locals: { icon: 'icon-grid-line', url: super_admin_root_url, label: 'Dashboard' } %>
+      <% Administrate::Namespace.new(namespace).resources.each do |resource| %>
+        <% next if resource.resource.start_with?("api/") || ["account_users", "account_impersonations", "account_inboxes", "account_settings", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "sip_credentials", "telephony_integrations", "video_conference_settings", "whatsapp_calling_configurations"].include?(resource.resource) %>
+        <% next if resource.resource == "platform_banners" && !ChatwootApp.chatwoot_cloud? %>
+        <%= render partial: "nav_item", locals: {
+            icon: sidebar_icons[resource.resource.to_sym],
+            url: resource_index_route(resource),
+            label: display_resource_name(resource),
+          }
+        %>
+
+      <% end %>
+      <%= render 'settings_menu', open: settings_open? %>
+      <% if settings_account_id.present? %>
+        <li class="mb-1 px-4">
+          <details class="group" open>
+            <summary class="-ml-1 flex items-center rounded-lg px-2 py-1.5 text-slate-800 hover:bg-slate-25 hover:text-woot-500 cursor-pointer list-none">
+              <svg width="16" height="16"><use xlink:href="#icon-settings-2-line" /></svg>
+              <span class="ml-2 text-sm font-medium">Configurações da Conta</span>
+              <svg class="ml-auto h-4 w-4 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </summary>
+            <div class="ml-4 mt-2 border-l border-slate-200 pl-2">
+              <select
+                class="mb-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800"
+                onchange="if (this.value) window.location.href = '/super_admin/accounts/' + this.value + '/settings/<%= selected_settings_section %>'"
+              >
+                <% accounts_for_settings.each do |account| %>
+                  <option value="<%= account.id %>" <%= 'selected' if account.id.to_s == settings_account_id.to_s %>>
+                    <%= account.name %>
+                  </option>
+                <% end %>
+              </select>
+              <ul>
+                <% account_settings_links.each do |label, icon, section| %>
+                  <% url = "/super_admin/accounts/#{settings_account_id}/settings/#{section}" %>
+                  <% item_class = (['super_admin/account_settings', 'super_admin/account_inboxes'].include?(params[:controller]) && selected_settings_section == section) ? 'text-woot-500 bg-slate-25' : 'text-slate-700' %>
+                  <li>
+                    <%= link_to url, class: "-ml-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-25 hover:text-woot-500 #{item_class}" do %>
+                      <svg width="14" height="14"><use xlink:href="#<%= icon %>" /></svg>
+                      <span><%= label %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          </details>
+        </li>
+      <% end %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-settings-2-line', url: super_admin_sip_credentials_path, label: 'Configurar Ramais' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-apps-2-line', url: super_admin_whatsapp_calling_configuration_path(account_id: settings_account_id), label: 'WhatsApp Calling' } %>
+      <li class="mb-1 px-4">
+        <div class="-ml-1 flex items-center rounded-lg px-2 py-1.5 text-slate-800">
+          <svg width="16" height="16"><use xlink:href="#icon-apps-2-line" /></svg>
+          <span class="ml-2 text-sm font-medium">Vídeo Conferência</span>
+        </div>
+        <ul class="ml-4 border-l border-slate-200 pl-2">
+          <li>
+            <%= link_to 'Acessar JRC Meet', 'https://jrcmeet2.jrcpabx.com.br/login', target: '_blank', rel: 'noopener noreferrer', class: '-ml-1 block rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-25 hover:text-woot-500' %>
+          </li>
+          <li>
+            <% video_settings_class = current_page?(super_admin_video_conference_settings_path) ? 'text-woot-500 bg-slate-25' : 'text-slate-700' %>
+            <%= link_to 'Configurar Agentes', super_admin_video_conference_settings_path, class: "-ml-1 block rounded-lg px-2 py-1.5 text-sm hover:bg-slate-25 hover:text-woot-500 #{video_settings_class}" %>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+  <div>
+    <ul class="my-4">
+      <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: sidekiq_web_url, label: 'Sidekiq Dashboard' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Instance Health' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-mail-send-fill', url: super_admin_push_diagnostics_url, label: 'Push Diagnostics' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Agent Dashboard' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-logout-circle-r-line', url: super_admin_logout_url, label: 'Logout' } %>
+    </ul>
+  </div>
+</div>

@@ -1,0 +1,215 @@
+<% content_for(:title) do %>
+  Configurar Ramais
+<% end %>
+
+<header class="flex px-8 py-4 items-center border-b border-n-weak" role="banner">
+  <div class="border border-n-weak mr-4 p-2 rounded-full">
+    <svg width="24" height="24"><use xlink:href="#icon-settings-2-line" /></svg>
+  </div>
+  <div class="flex flex-col justify-center">
+    <h1 class="text-base font-medium leading-6 text-n-slate-12" id="page-title">Configurar Ramais</h1>
+    <p class="text-sm font-normal leading-5 text-slate-500 m-0">Configure o softphone individual dos agentes de cada cliente.</p>
+  </div>
+</header>
+
+<section class="main-content__body px-8 py-6">
+  <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <%= form_with url: super_admin_sip_credentials_path, method: :get, local: true, class: 'flex flex-col gap-3 md:flex-row md:items-end' do |form| %>
+      <div class="flex-1">
+        <%= form.label :account_id, 'Cliente / Conta', class: 'mb-2 block text-sm font-medium text-slate-800' %>
+        <%= form.select :account_id,
+                        options_from_collection_for_select(@accounts, :id, :name, @account&.id),
+                        {},
+                        class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+      </div>
+      <%= form.submit 'Carregar agentes', class: 'h-11 cursor-pointer rounded-lg border-0 bg-woot-500 px-5 text-sm font-medium text-white hover:bg-woot-600' %>
+    <% end %>
+  </div>
+
+  <% if @account.nil? %>
+    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-25 p-10 text-center text-sm text-slate-600">
+      Nenhuma conta foi cadastrada nesta instalação.
+    </div>
+  <% else %>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-woot-600">Cliente selecionado</p>
+        <h2 class="mt-1 text-xl font-semibold text-slate-900"><%= @account.name %></h2>
+      </div>
+      <% configured_count = @credentials_by_user_id.values.count(&:configured?) %>
+      <span class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700">
+        <%= configured_count %>/<%= @agents.size %> ramais ativos
+      </span>
+    </div>
+
+    <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-woot-600">Histórico de chamadas</p>
+          <h3 class="mt-1 text-base font-semibold text-slate-900">Integração HoduPBX do cliente</h3>
+          <p class="mt-1 text-sm text-slate-500">O token é criptografado e compartilhado apenas no backend pelos ramais desta conta.</p>
+        </div>
+        <span class="rounded-full border px-3 py-1.5 text-xs font-medium <%= @telephony_integration&.configured? ? 'border-green-200 bg-green-50 text-green-700' : 'border-slate-200 bg-slate-50 text-slate-600' %>">
+          <%= @telephony_integration&.configured? ? 'Histórico ativo' : 'Não configurado' %>
+        </span>
+      </div>
+
+      <%= form_with url: super_admin_telephony_integration_path(account_id: @account.id), method: :patch, local: true do %>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Provedor</span>
+            <%= select_tag 'telephony_integration[provider]', options_for_select([['HoduPBX', 'hodupbx']], @telephony_integration&.provider || 'hodupbx'), class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900' %>
+          </label>
+          <label class="md:col-span-2">
+            <span class="mb-2 block text-sm font-medium text-slate-700">URL base</span>
+            <%= text_field_tag 'telephony_integration[cdr_base_url]', @telephony_integration&.cdr_base_url || 'https://portal-cloud.jrcpabx.com.br', required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Versão da API</span>
+            <%= text_field_tag 'telephony_integration[cdr_api_version]', @telephony_integration&.cdr_api_version || 'v1.4', required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+          </label>
+          <label class="md:col-span-2">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Token do tenant</span>
+            <%= password_field_tag 'telephony_integration[cdr_token]', nil, required: @telephony_integration&.cdr_token.blank?, autocomplete: 'new-password', placeholder: @telephony_integration&.cdr_token.present? ? 'Token protegido — deixe em branco para preservar' : 'Informe o token fornecido pelo HoduPBX', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+            <span class="mt-2 block text-xs text-slate-500">O token salvo nunca é exibido novamente.</span>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Tipo do tenant</span>
+            <%= text_field_tag 'telephony_integration[tenant_type]', @telephony_integration&.tenant_type || 'TENANT', required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm uppercase text-slate-900 focus:border-woot-500 focus:outline-none' %>
+          </label>
+          <label>
+            <span class="mb-2 block text-sm font-medium text-slate-700">Período padrão</span>
+            <%= select_tag 'telephony_integration[default_period_days]', options_for_select([['Hoje', 1], ['Últimos 7 dias', 7], ['Últimos 30 dias', 30]], @telephony_integration&.default_period_days || 7), class: 'h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900' %>
+          </label>
+          <label class="flex items-center gap-3 md:col-span-2 xl:col-span-4">
+            <%= hidden_field_tag 'telephony_integration[history_enabled]', '0' %>
+            <%= check_box_tag 'telephony_integration[history_enabled]', '1', @telephony_integration&.history_enabled?, class: 'h-4 w-4 rounded border-slate-300 text-woot-500' %>
+            <span class="text-sm font-medium text-slate-800">Ativar histórico para os agentes deste cliente</span>
+          </label>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <%= submit_tag 'Salvar integração', class: 'cursor-pointer rounded-lg border-0 bg-woot-500 px-5 py-3 text-sm font-medium text-white hover:bg-woot-600' %>
+          <% if @telephony_integration&.persisted? %>
+            <%= button_to 'Testar conexão',
+                          test_connection_super_admin_telephony_integration_path(account_id: @account.id),
+                          method: :post,
+                          form: { class: 'inline-block' },
+                          class: 'cursor-pointer rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50' %>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <aside class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h3 class="text-sm font-semibold text-slate-900">Agentes do cliente</h3>
+          <p class="mt-1 text-xs text-slate-500"><%= @agents.size %> agente(s)</p>
+        </div>
+
+        <% if @agents.empty? %>
+          <div class="p-8 text-center text-sm text-slate-500">
+            Este cliente ainda não possui agentes. Cadastre o agente na conta para configurar o ramal.
+          </div>
+        <% else %>
+          <div class="max-h-[620px] space-y-2 overflow-y-auto p-3">
+            <% @agents.each do |agent| %>
+              <% credential = @credentials_by_user_id[agent.id] %>
+              <% selected = agent.id == @selected_agent&.id %>
+              <%= link_to super_admin_sip_credentials_path(account_id: @account.id, user_id: agent.id),
+                          class: "flex items-center gap-3 rounded-xl border p-3 transition #{selected ? 'border-woot-500 bg-woot-50' : 'border-transparent hover:border-slate-200 hover:bg-slate-25'}" do %>
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-700">
+                  <%= (agent.available_name.presence || agent.email).first(2).upcase %>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <strong class="block truncate text-sm text-slate-900"><%= agent.available_name %></strong>
+                  <span class="block truncate text-xs text-slate-500"><%= agent.email %></span>
+                  <span class="mt-1.5 flex items-center gap-2 text-xs text-slate-600">
+                    <% if credential&.configured? %>
+                      <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                      Ativo · Ramal <%= credential.history_extension %>
+                    <% elsif credential %>
+                      <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                      Inativo · Ramal <%= credential.history_extension %>
+                    <% else %>
+                      <span class="h-2 w-2 rounded-full bg-slate-300"></span>
+                      Não configurado
+                    <% end %>
+                  </span>
+                </span>
+                <span class="text-xs font-medium text-woot-600"><%= credential ? 'Editar' : 'Configurar' %></span>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </aside>
+
+      <% if @selected_agent %>
+        <% credential = @credential %>
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+          <div class="mb-7 flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
+            <div>
+              <h3 class="text-base font-semibold text-slate-900"><%= @selected_agent.available_name %></h3>
+              <p class="mt-1 text-sm text-slate-500"><%= @selected_agent.email %></p>
+            </div>
+            <span class="rounded-full border px-3 py-1.5 text-xs font-medium <%= credential&.configured? ? 'border-green-200 bg-green-50 text-green-700' : 'border-slate-200 bg-slate-50 text-slate-600' %>">
+              <%= credential&.configured? ? 'Ativo' : 'Não configurado' %>
+            </span>
+          </div>
+
+          <%= form_with url: super_admin_sip_credential_path(@selected_agent, account_id: @account.id), method: :patch, local: true do |form| %>
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <label class="md:col-span-2">
+                <span class="mb-2 block text-sm font-medium text-slate-700">Servidor WSS</span>
+                <%= text_field_tag 'sip_credential[wss_server]', credential&.wss_server || 'wss://cloud.jrcpabx.com.br:7443', required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+              </label>
+              <label>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Domínio SIP</span>
+                <%= text_field_tag 'sip_credential[sip_domain]', credential&.sip_domain || 'cloud.jrcpabx.com.br', required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+              </label>
+              <label>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Usuário SIP</span>
+                <%= text_field_tag 'sip_credential[username]', credential&.username, required: true, class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+              </label>
+              <label>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Ramal</span>
+                <%= text_field_tag 'sip_credential[extension]', credential&.extension, required: true, inputmode: 'numeric', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+                <span class="mt-2 block text-xs text-slate-500">Identificador do ramal no SIP.</span>
+              </label>
+              <label class="md:col-span-2">
+                <span class="mb-2 block text-sm font-medium text-slate-700">Ramal para histórico (HoduPBX)</span>
+                <%= text_field_tag 'sip_credential[call_history_extension]', credential&.history_extension, required: true, inputmode: 'numeric', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+                <span class="mt-2 block text-xs text-slate-500">Usado somente na consulta do Call Log. Nunca é substituído pelo Usuário SIP.</span>
+              </label>
+              <label>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Senha SIP</span>
+                <%= password_field_tag 'sip_credential[password]', nil, required: credential.nil?, autocomplete: 'new-password', class: 'h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 focus:border-woot-500 focus:outline-none' %>
+                <span class="mt-2 block text-xs text-slate-500">Deixe em branco para preservar a senha atual.</span>
+              </label>
+              <label class="flex items-center gap-3 md:col-span-2">
+                <%= hidden_field_tag 'sip_credential[enabled]', '0' %>
+                <%= check_box_tag 'sip_credential[enabled]', '1', credential.nil? || credential.enabled?, class: 'h-4 w-4 rounded border-slate-300 text-woot-500' %>
+                <span class="text-sm font-medium text-slate-800">Ativar botão Ramal para este agente</span>
+              </label>
+            </div>
+
+            <div class="mt-7 flex flex-wrap gap-3">
+              <%= form.submit 'Salvar e ativar ramal', class: 'cursor-pointer rounded-lg border-0 bg-woot-500 px-5 py-3 text-sm font-medium text-white hover:bg-woot-600' %>
+              <% if credential %>
+                <%= link_to 'Remover configuração',
+                            super_admin_sip_credential_path(@selected_agent, account_id: @account.id),
+                            data: { turbo_method: :delete, turbo_confirm: 'Deseja remover a configuração deste ramal?' },
+                            class: 'rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-700 hover:bg-red-100' %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-25 p-8 text-center text-sm text-slate-500">
+          Selecione uma conta que possua agentes para configurar os ramais.
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

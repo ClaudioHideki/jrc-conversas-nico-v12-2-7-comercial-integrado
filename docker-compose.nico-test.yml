@@ -1,0 +1,75 @@
+name: jrc-nico-test
+services:
+  runtime:
+    image: node:24.13.0-bookworm-slim
+    working_dir: /runtime
+    volumes:
+      - ./services/nico-runtime:/runtime
+      - runtime_modules:/runtime/node_modules
+    environment:
+      LOG_LEVEL: error
+      NICO_MODE: fixture
+      NICO_SERVICE_TOKEN: local-test-token-only-not-for-production
+      NICO_ALLOWED_ACCOUNTS: '1,2'
+      NICO_PGLITE_DATA_DIR: /tmp/nico-db
+    command: [npm, test]
+  app:
+    build:
+      context: .
+      dockerfile: docker/nico-test.Dockerfile
+    image: jrc-nico-test:local
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/app/.pnpm-store
+      - rails_cache:/tmp/bootsnap
+    environment:
+      RAILS_ENV: test
+      BOOTSNAP_CACHE_DIR: /tmp/bootsnap
+      NODE_ENV: test
+      SECRET_KEY_BASE: nico-local-test-only-not-for-production-012345678901234567890123456789
+      POSTGRES_HOST: postgres
+      POSTGRES_DATABASE: jrc_nico_test
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: nico-test-local
+      REDIS_URL: redis://redis:6379/0
+      FRONTEND_URL: http://localhost:3107
+      ACTIVE_STORAGE_SERVICE: local
+      RAILS_LOG_TO_STDOUT: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  app_root:
+    extends:
+      service: app
+    environment:
+      POSTGRES_DATABASE: jrc_nico_root_test
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nico-test-local
+      POSTGRES_DB: jrc_nico_test
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d jrc_nico_test']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.4.0-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  rails_cache:
+  pnpm_store:
+  runtime_modules:
+  node_modules:
+  postgres_data:

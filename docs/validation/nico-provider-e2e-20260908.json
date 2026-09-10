@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "at": "2026-09-08T12:29:40.029Z",
+  "account_id": 1,
+  "run_id": 7,
+  "mode": "provider",
+  "model": "gpt-4.1-mini",
+  "usage": {
+    "input_tokens": 375,
+    "total_tokens": 503,
+    "output_tokens": 128
+  },
+  "summary": "O cliente da conta 1 solicitou informações sobre implantação e suporte. O lead do CRM relacionado é uma oportunidade para o produto GoPure Homologação, classificada como nova, com dados fictícios para validação e atividade aprovada, sem envio externo.",
+  "suggested_reply": "Olá! Para melhor atendê-lo, poderia informar qual o escopo desejado para a implantação? Além disso, quais são suas expectativas em relação ao suporte? Há alguma necessidade específica que devemos considerar?",
+  "evidence": [
+    {
+      "source": "conversation",
+      "reference": "message:1"
+    },
+    {
+      "source": "crm",
+      "reference": "lead:1"
+    }
+  ],
+  "public_messages_unchanged": true
+}

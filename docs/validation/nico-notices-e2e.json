@@ -1,0 +1,251 @@
+{
+  "at": "2026-09-10T13:12:19.960Z",
+  "approved": [],
+  "baseline_notice_ids": [],
+  "incoming_id": 70,
+  "notice_id": 1,
+  "initial_notice": {
+    "id": 1,
+    "kind": "action",
+    "status": "awaiting_confirmation",
+    "body": "Identifiquei o contato da Marina no sistema. Vou preparar a atualização do e-mail dela para marina.nico.local@example.test e agendar a reunião de demonstração para 11/09/2026 às 15h no horário de Brasília, com o tema \"atendimento da equipe de 10 operadores\". Por favor, aguarde a confirmação das ações.",
+    "request": "Atualizar e-mail do cliente Marina para marina.nico.local@example.test no cadastro e registrar reunião de demonstração para 11/09/2026 às 15h (horário de Brasília) no CRM, com tema atendimento da equipe de 10 operadores.",
+    "unread": true,
+    "conversation_id": 14,
+    "contact_name": "Marina — Cliente Simulado NICO",
+    "command_ids": [
+      40
+    ],
+    "updated_at": "2026-09-10T13:12:42.069Z",
+    "metadata": {}
+  },
+  "initial_commands": [
+    {
+      "id": 40,
+      "request_id": "d5939c49-5669-4612-8e6a-976a501dfcd0",
+      "status": "awaiting_confirmation",
+      "tool": "update_contact",
+      "arguments": {
+        "email": "marina.nico.local@example.test",
+        "contact_id": 53
+      },
+      "result": [
+        {
+          "id": 53,
+          "name": "Marina — Cliente Simulado NICO",
+          "email": null,
+          "phone_number": null
+        }
+      ],
+      "reply": "Identifiquei o contato da Marina no sistema. Vou preparar a atualização do e-mail dela para marina.nico.local@example.test e agendar a reunião de demonstração para 11/09/2026 às 15h no horário de Brasília, com o tema \"atendimento da equipe de 10 operadores\". Por favor, aguarde a confirmação das ações.",
+      "created_at": "2026-09-10T13:12:37.719Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    }
+  ],
+  "notice": {
+    "id": 1,
+    "kind": "action",
+    "status": "review",
+    "body": "O e-mail do cliente Marina foi atualizado para marina.nico.local@example.test e a reunião de demonstração para 11/09/2026 às 15h (horário de Brasília) com o tema atendimento da equipe de 10 operadores foi registrada no CRM vinculada ao lead existente. Todas as ações solicitadas foram preparadas para sua revisão.",
+    "request": "Atualizar e-mail do cliente Marina para marina.nico.local@example.test no cadastro e registrar reunião de demonstração para 11/09/2026 às 15h (horário de Brasília) no CRM, com tema atendimento da equipe de 10 operadores.",
+    "unread": false,
+    "conversation_id": 14,
+    "contact_name": "Marina — Cliente Simulado NICO",
+    "command_ids": [
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    "updated_at": "2026-09-10T13:42:25.077Z",
+    "metadata": {}
+  },
+  "commands": [
+    {
+      "id": 44,
+      "request_id": "5fe7d607-b9de-443b-8501-f116015bf9c0",
+      "status": "succeeded",
+      "tool": null,
+      "arguments": {},
+      "result": {},
+      "reply": "O e-mail do cliente Marina foi atualizado para marina.nico.local@example.test e a reunião de demonstração para 11/09/2026 às 15h (horário de Brasília) com o tema atendimento da equipe de 10 operadores foi registrada no CRM vinculada ao lead existente. Todas as ações solicitadas foram preparadas para sua revisão.",
+      "created_at": "2026-09-10T13:32:19.307Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    },
+    {
+      "id": 43,
+      "request_id": "5f3d4c40-255e-443d-82da-5969767fe817",
+      "status": "succeeded",
+      "tool": "create_activity",
+      "arguments": {
+        "title": "Reunião de demonstração - atendimento da equipe de 10 operadores",
+        "due_at": "2026-09-11T15:00:00-03:00",
+        "lead_id": 16,
+        "description": "Reunião agendada para demonstração do atendimento da equipe de 10 operadores.",
+        "activity_type": "meeting"
+      },
+      "result": {
+        "record": {
+          "id": 9,
+          "title": "Reunião de demonstração - atendimento da equipe de 10 operadores",
+          "due_at": "2026-09-11T18:00:00.000Z",
+          "status": "scheduled",
+          "deal_id": null,
+          "lead_id": 16,
+          "contact_id": null
+        },
+        "message": "Atividade agendada; não envia mensagem nem inicia ligação: Reunião de demonstração - atendimento da equipe de 10 operadores (#9)",
+        "route_name": "crm_activities",
+        "resource_type": "JrcCrm::Activity"
+      },
+      "reply": "Atividade agendada; não envia mensagem nem inicia ligação: Reunião de demonstração - atendimento da equipe de 10 operadores (#9)",
+      "created_at": "2026-09-10T13:31:56.039Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    },
+    {
+      "id": 42,
+      "request_id": "473676b4-018f-47f7-b117-a116cb05db50",
+      "status": "succeeded",
+      "tool": null,
+      "arguments": {},
+      "result": {},
+      "reply": "O e-mail do contato Marina foi atualizado para marina.nico.local@example.test. Agora, para registrar a reunião de demonstração no CRM, preciso saber se há um lead ou negócio vinculado a esse contato para associar a atividade. Você pode informar se existe algum lead ou negócio relacionado a Marina?",
+      "created_at": "2026-09-10T13:30:23.584Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    },
+    {
+      "id": 41,
+      "request_id": "85f6ea8e-a6d0-4bb2-b3bc-f775a11be682",
+      "status": "failed",
+      "tool": null,
+      "arguments": {},
+      "result": {},
+      "reply": "Não foi possível preparar a ação. Revise os dados e as permissões no módulo.",
+      "created_at": "2026-09-10T13:18:10.524Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    },
+    {
+      "id": 40,
+      "request_id": "d5939c49-5669-4612-8e6a-976a501dfcd0",
+      "status": "succeeded",
+      "tool": "update_contact",
+      "arguments": {
+        "email": "marina.nico.local@example.test",
+        "contact_id": 53
+      },
+      "result": {
+        "record": {
+          "id": 53,
+          "name": "Marina — Cliente Simulado NICO",
+          "email": "marina.nico.local@example.test",
+          "phone_number": null
+        },
+        "message": "Contato atualizado: Marina — Cliente Simulado NICO (#53)",
+        "route_name": "contacts_dashboard_index",
+        "resource_type": "Contact"
+      },
+      "reply": "Contato atualizado: Marina — Cliente Simulado NICO (#53)",
+      "created_at": "2026-09-10T13:12:37.719Z",
+      "source_notice_id": 1,
+      "source_contact": "Marina — Cliente Simulado NICO",
+      "source_conversation_id": 14
+    }
+  ],
+  "contact": {
+    "additional_attributes": {
+      "avatar_url_hash": "a231de09f8ecd4e58e532f8d8d1e339e55fc4d4c0880a0afa9dcdbd1f154cc93",
+      "last_avatar_sync_at": "2026-09-10T13:18:47Z"
+    },
+    "availability_status": "offline",
+    "email": "marina.nico.local@example.test",
+    "id": 53,
+    "name": "Marina — Cliente Simulado NICO",
+    "phone_number": null,
+    "blocked": false,
+    "identifier": "nico-local-customer-simulator",
+    "thumbnail": "",
+    "custom_attributes": {},
+    "last_activity_at": 1789045943,
+    "created_at": 1789042422,
+    "contact_inboxes": [
+      {
+        "source_id": "1ad889fc-0c31-4b36-9a51-cf88cfea6f0f",
+        "inbox": {
+          "id": 66,
+          "avatar_url": "",
+          "channel_id": 4,
+          "name": "NICO — Simulador de cliente",
+          "channel_type": "Channel::Api",
+          "provider": null
+        }
+      }
+    ]
+  },
+  "customer_replies": [
+    {
+      "id": 71,
+      "content": "Marina, vou solicitar ao responsável a atualização do seu e-mail no cadastro e o registro da reunião de demonstração para amanhã às 15h, horário de Brasília, sobre o atendimento da sua equipe de 10 operadores. Em breve, você receberá a confirmação desse agendamento."
+    }
+  ],
+  "passed": true,
+  "timezone_command": {
+    "id": 45,
+    "request_id": "70952935-2fc3-495b-a1d4-e6a93e2d3876",
+    "status": "succeeded",
+    "tool": "set_reporting_timezone",
+    "arguments": {
+      "timezone": "America/Sao_Paulo"
+    },
+    "result": {
+      "message": "Fuso da agenda e dos relatórios atualizado para America/Sao_Paulo.",
+      "route_name": "general_settings_index"
+    },
+    "reply": "Fuso da agenda e dos relatórios atualizado para America/Sao_Paulo.",
+    "created_at": "2026-09-10T13:35:14.364Z",
+    "source_notice_id": null,
+    "source_contact": null,
+    "source_conversation_id": null
+  },
+  "activity": {
+    "id": 9,
+    "activity_type": "meeting",
+    "title": "Reunião de demonstração - atendimento da equipe de 10 operadores",
+    "description": "Reunião agendada para demonstração do atendimento da equipe de 10 operadores.",
+    "status": "scheduled",
+    "due_at": "2026-09-11T15:00:00.000-03:00",
+    "due_at_display": "11/09/2026 15:00",
+    "completed_at": null,
+    "completed_at_display": null,
+    "user": {
+      "id": 1,
+      "name": "Administrador GoPure Homologação"
+    },
+    "deal_id": null,
+    "deal": null,
+    "lead_id": 16,
+    "lead": {
+      "id": 16,
+      "name": "Marina — Cliente Simulado NICO"
+    },
+    "related_type": "lead",
+    "related_id": 16,
+    "related_label": "Lead - Marina — Cliente Simulado NICO",
+    "overdue": false,
+    "created_at": "2026-09-10T10:32:17.893-03:00",
+    "created_at_display": "10/09/2026 10:32",
+    "updated_at": "2026-09-10T10:32:17.893-03:00",
+    "updated_at_display": "10/09/2026 10:32"
+  },
+  "verified_at": "2026-09-10T14:01:03.490Z"
+}

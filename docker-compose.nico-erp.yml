@@ -1,0 +1,28 @@
+services:
+  web:
+    environment:
+      NICO_ERP_URL: http://erp:3112
+      ERP_ALLOWED_ACCOUNTS: '1'
+  worker:
+    environment:
+      NICO_ERP_URL: http://erp:3112
+      ERP_ALLOWED_ACCOUNTS: '1'
+  erp:
+    image: node:24.13.0-bookworm-slim
+    working_dir: /erp
+    volumes: ['./services/jrc-erp:/erp:ro']
+    env_file:
+      - local/nico.env
+      - local/erp-integration.env
+    environment:
+      ERP_ALLOWED_ACCOUNTS: '1'
+      ERP_LIVE_READ_ENABLED: 'true'
+    command: [node, src/server.mjs]
+    networks: [default, erp_egress]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3112/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+networks:
+  erp_egress:
