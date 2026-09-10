@@ -1,4 +1,4 @@
-﻿name: Build WhatsApp Calling Permissions
+name: Build JRC Conversas NICO V12.2.7
 
 on:
   push:
@@ -6,17 +6,18 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: claudiohideki/jrcconversas-whatsapp-calling-v4-20260828
+  IMAGE_NAME: claudiohideki/jrc-conversas-nico-v12-2-7-comercial-integrado
+  IMAGE_TAG: 4.16.2-jrc-nico-v12-2-7-20260910
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Baixar codigo
@@ -32,13 +33,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Gerar metadados da imagem
+      - name: Gerar metadados
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=4.16.2-jrc-whatsapp-calling-v4-20260828
+            type=raw,value=${{ env.IMAGE_TAG }}
             type=sha,prefix=sha-
 
       - name: Construir e publicar imagem
@@ -46,11 +47,10 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-
-
+          provenance: false
