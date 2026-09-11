@@ -24,7 +24,13 @@ async function readJson(response: Response): Promise<any> {
       if (size > 131072) throw new Error('Provider response too large');
       parts.push(value);
     }
-    return JSON.parse(Buffer.concat(parts).toString('utf8'));
+    const text = Buffer.concat(parts).toString('utf8');
+    try {
+      return JSON.parse(text);
+    } catch {
+      const preview = text.replace(/\s+/g, ' ').slice(0, 300);
+      throw new Error(`Provider response invalid JSON: ${preview || '<empty>'}`);
+    }
   } finally { await reader.cancel(); }
 }
 
