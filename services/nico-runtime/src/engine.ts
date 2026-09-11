@@ -94,8 +94,21 @@ export async function createEngine(config: Config) {
         });
         const body = await readJson(response);
         let parsed;
-        try { parsed = JSON.parse(body.choices?.[0]?.message?.content); }
-        catch { throw new Error('Provider output not JSON'); }
+        const content = body.choices?.[0]?.message?.content;
+        try {
+          if (content && typeof content === 'object') {
+            parsed = content;
+          } else {
+            const text = String(content ?? '').trim();
+            const normalized = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            parsed = JSON.parse(normalized);
+          }
+        } catch {
+          const contentType = content === null || content === undefined ? 'empty' : typeof content;
+          const contentLength = typeof content === 'string' ? content.length : 0;
+          const finishReason = body.choices?.[0]?.finish_reason ?? 'unknown';
+          throw new Error(`Provider output not valid JSON (type=${contentType}, length=${contentLength}, finish_reason=${finishReason})`);
+        }
         const analysis = operational ? validateOperationResult(parsed, raw.kind) : validateAnalysis(parsed, (input as Input).context);
         const usage = body.usage;
         if (!usage || ![usage.prompt_tokens, usage.completion_tokens, usage.total_tokens].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 270000)
