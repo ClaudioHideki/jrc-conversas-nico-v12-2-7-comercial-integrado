@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createEngine } from '../src/engine.ts';
-import { validateOperation, validateOperationResult } from '../src/operations.ts';
+import { operationPrompt, validateOperation, validateOperationResult } from '../src/operations.ts';
 import { validateAudio, transcribeAudio } from '../src/transcription.ts';
 
 const input = { request_id: 'a56905c4-9a03-4c21-a886-b5d18a3e4c57', account_id: 1, kind: 'operator' as const, message: 'Crie um contato', history: [], context: {} };
@@ -17,6 +17,13 @@ test('operation boundary rejects unknown scope and non-object tool arguments', (
   }
   assert.equal(validateOperationResult({ reply: 'Qual nome?', tool: '', arguments: '' }, 'operator').arguments, '{}');
 });
+test('operator prompt forbids claiming actions without real tool evidence', () => {
+  const prompt = operationPrompt('operator');
+  assert.match(prompt, /Se tool estiver vazio/);
+  assert.match(prompt, /Nunca diga que consultou, encontrou, criou, atualizou, moveu, enviou, agendou ou executou algo sem uma ferramenta correspondente realmente executada/);
+  assert.match(prompt, /use uma ferramenta de consulta em vez de responder por suposicao/);
+});
+
 test('three independent operations share bounded capacity but not cancellation', { timeout: 60000 }, async () => {
   const dir = await mkdtemp(join(tmpdir(), 'nico-operations-'));
   const engine = await createEngine({ mode: 'provider', dataDir: dir, model: 'test-model', apiKey: 'test-only' });

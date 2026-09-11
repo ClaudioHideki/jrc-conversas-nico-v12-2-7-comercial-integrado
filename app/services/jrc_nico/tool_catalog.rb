@@ -2,6 +2,8 @@ class JrcNico::ToolCatalog
   # Asterisk marks required fields. Unknown keys are rejected before execution.
   TOOLS = {
     'search_contacts' => ['Buscar contatos por nome, telefone ou email', 'contacts', false, %w[query*]],
+    'list_contacts' => ['Listar ate 20 contatos cadastrados na conta', 'contacts', false, []],
+    'count_contacts' => ['Contar contatos cadastrados na conta', 'contacts', false, []],
     'create_contact' => ['Cadastrar contato; informe telefone internacional ou email', 'contacts', true, %w[name* phone_number email]],
     'update_contact' => ['Atualizar dados de um contato identificado', 'contacts', true, %w[contact_id* name phone_number email]],
     'list_conversations' => ['Listar até 20 conversas visíveis recentes; filtrar por nome e status', 'conversations', false, %w[query status]],

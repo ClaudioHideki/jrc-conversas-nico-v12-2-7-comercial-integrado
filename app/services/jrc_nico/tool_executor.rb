@@ -23,6 +23,19 @@ class JrcNico::ToolExecutor
             .select { |c| @access.policy(c).show? }.map { |c| c.slice(:id, :name, :email, :phone_number) }
   end
 
+  def list_contacts
+    scope = @account.contacts
+    scope = scope.where(id: @customer_conversation.contact_id) if @customer_conversation
+    scope.order(id: :desc).limit(20)
+         .select { |c| @access.policy(c).show? }.map { |c| c.slice(:id, :name, :email, :phone_number) }
+  end
+
+  def count_contacts
+    scope = @account.contacts
+    scope = scope.where(id: @customer_conversation.contact_id) if @customer_conversation
+    { count: scope.find_each.count { |c| @access.policy(c).show? } }
+  end
+
   def create_contact
     raise Pundit::NotAuthorizedError unless @access.policy(Contact).create?
 

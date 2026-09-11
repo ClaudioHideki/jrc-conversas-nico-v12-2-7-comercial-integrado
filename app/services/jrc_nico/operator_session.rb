@@ -295,7 +295,7 @@ class JrcNico::OperatorSession
     data = result.as_json
     rows = data.is_a?(Array) ? data : [data]
     ids = rows.filter_map { |row| row['conversation_id'] if row.is_a?(Hash) }
-    types = { 'search_contacts' => 'Contact', 'list_leads' => 'JrcCrm::Lead', 'list_deals' => 'JrcCrm::Deal',
+    types = { 'search_contacts' => 'Contact', 'list_contacts' => 'Contact', 'list_leads' => 'JrcCrm::Lead', 'list_deals' => 'JrcCrm::Deal',
               'list_activities' => 'JrcCrm::Activity', 'list_proposals' => 'JrcCrm::Proposal' }
     resources = rows.filter_map do |row|
       next unless row.is_a?(Hash)
