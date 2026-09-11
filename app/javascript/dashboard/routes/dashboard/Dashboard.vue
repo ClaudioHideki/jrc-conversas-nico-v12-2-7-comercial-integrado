@@ -69,7 +69,7 @@ export default {
       accountId,
       upgradePageRef,
       windowWidth,
-      nicoOpen: useJrcCopilot().isOpen,
+      nicoOpen: useJrcCopilot().isFull,
       nicoCallActive: computed(
         () =>
           callsStore.hasActiveCall ||
@@ -170,7 +170,7 @@ export default {
     >
       <JrcTopBar />
       <div
-        class="relative flex flex-col min-[1920px]:flex-row min-h-0 flex-1 overflow-hidden"
+        class="relative flex min-h-0 flex-1 overflow-hidden"
         :class="!showUpgradePage && !nicoOpen ? 'pe-16 sm:pe-24' : ''"
       >
         <UpgradePage

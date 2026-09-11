@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import { useSipWebphone } from './useSipWebphone';
 import { useJrcCopilot } from 'dashboard/components-next/jrcCopilot/useJrcCopilot';
 
-const { isOpen: nicoOpen } = useJrcCopilot();
+const { isFull: nicoOpen } = useJrcCopilot();
 
 const TEXT = Object.freeze({
   incoming: 'Chamada recebida',
@@ -76,7 +76,7 @@ onBeforeUnmount(stopRingtone);
       class="fixed z-50 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-n-strong bg-n-solid-2 p-5 shadow-2xl"
       :class="
         nicoOpen
-          ? 'top-20 right-5 min-[1920px]:top-auto min-[1920px]:bottom-5 min-[1920px]:right-[396px]'
+          ? 'top-20 right-5 lg:top-auto lg:bottom-5 lg:right-[416px] min-[1920px]:right-[436px]'
           : 'bottom-5 right-5'
       "
     >

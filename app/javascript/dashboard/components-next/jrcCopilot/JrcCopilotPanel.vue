@@ -9,6 +9,8 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useWindowSize } from '@vueuse/core';
+import { useMapGetter } from 'dashboard/composables/store';
 import api from 'dashboard/api/jrcNicoOperations';
 import videoSettings from 'dashboard/api/videoConferenceSettings';
 import { openVideoConferencePopup } from 'dashboard/helper/videoConference';
@@ -16,6 +18,10 @@ import { useCallsStore } from 'dashboard/stores/calls';
 import { useSipWebphone } from 'dashboard/routes/dashboard/webphone/useSipWebphone';
 import { useJrcCopilot } from './useJrcCopilot';
 import { useNicoVoice } from './useNicoVoice';
+import JrcCopilotQuickPanel from './JrcCopilotQuickPanel.vue';
+import NicoComposer from './NicoComposer.vue';
+import NicoInteractionStatus from './NicoInteractionStatus.vue';
+import { nicoInteractionState } from './nicoInteractionState';
 import NicoKnowledgePanel from './NicoKnowledgePanel.vue';
 import NicoConversationPanel from './NicoConversationPanel.vue';
 import { runNicoBrowserAction } from './nicoBrowserActions';
@@ -30,7 +36,9 @@ const avatarUrl = '/brand-assets/jrc-copilot-avatar.png';
 const route = useRoute();
 const router = useRouter();
 const {
+  mode,
   isOpen,
+  open,
   close,
   pendingPrompt,
   consumePrompt,
@@ -46,8 +54,24 @@ const conversationId = computed(
     undefined
 );
 const visible = computed(() => props.embedded || isOpen.value);
+const fullVisible = computed(() => props.embedded || mode.value === 'full');
+const { width: windowWidth } = useWindowSize();
+const currentChat = useMapGetter('getSelectedChat');
+const contextLabel = computed(() => {
+  const chat = currentChat.value;
+  if (
+    conversationId.value &&
+    Number(chat?.id) === conversationId.value &&
+    chat?.meta?.sender?.name
+  )
+    return t('JRC_NICO.UX.CONTEXT_CONTACT', { name: chat.meta.sender.name });
+  return conversationId.value
+    ? t('JRC_NICO.OPERATOR.CONTEXT', { id: conversationId.value })
+    : label('PRIVATE');
+});
 const input = ref('');
 const busy = ref(false);
+const phase = ref('submitting');
 const error = ref('');
 const emptyState = () => ({
   messages: [],
@@ -58,6 +82,12 @@ const emptyState = () => ({
 });
 const state = ref(emptyState());
 const scroller = ref(null);
+const scrollToCurrent = () => {
+  const target =
+    scroller.value?.querySelector('[data-nico-command]') ||
+    scroller.value?.querySelector('[data-nico-last-message="true"]');
+  target?.scrollIntoView({ block: 'nearest' });
+};
 const panelRoot = ref(null);
 const delegateForm = ref(false);
 const knowledgeOpen = ref(false);
@@ -90,6 +120,10 @@ const voice = useNicoVoice({
   onTranscript: text => {
     input.value = text;
   },
+  // eslint-disable-next-line no-use-before-define -- The callback runs after setup and shares the manual ask handler.
+  onSubmit: text => ask(text),
+  context: computed(() => `${accountId.value}:${conversationId.value || ''}`),
+  canSubmit: computed(() => visible.value && !busy.value),
   inCall,
 });
 const pending = computed(() =>
@@ -109,12 +143,40 @@ const messages = computed(() =>
   expandedHistory.value ? state.value.messages : state.value.messages.slice(-8)
 );
 const latest = computed(() => state.value.commands[0]);
+const activeCommand = computed(() =>
+  focusedNoticeId.value
+    ? state.value.commands.find(
+        command => command.source_notice_id === focusedNoticeId.value
+      )
+    : latest.value
+);
+const hasOperation = computed(() =>
+  Boolean((busy.value || activeCommand.value) && !voice.error.value)
+);
+const interactionState = computed(() =>
+  nicoInteractionState({
+    voice,
+    busy: busy.value,
+    phase: phase.value,
+    error: error.value,
+    command: activeCommand.value,
+  })
+);
+const unreadNotices = computed(() =>
+  notices.value.filter(notice => notice.unread)
+);
+const quickReply = computed(
+  () =>
+    state.value.messages.filter(message => message.role === 'assistant').at(-1)
+      ?.content || ''
+);
 const receipts = computed(() =>
   state.value.commands
     .filter(c => c.status === 'succeeded' && c.result?.record?.id)
     .slice(0, 4)
 );
 let version = 0;
+let loadVersion = 0;
 let poll;
 let abort;
 const apply = data => {
@@ -126,28 +188,37 @@ const apply = data => {
 const load = async () => {
   if (!accountId.value || busy.value) return;
   const current = version;
+  loadVersion += 1;
+  const currentLoad = loadVersion;
   abort?.abort();
   abort = new AbortController();
   try {
     const { data } = await api.show(accountId.value, abort.signal);
-    if (current === version) apply(data);
+    if (current === version && currentLoad === loadVersion) apply(data);
   } catch (e) {
-    if (current === version && e.code !== 'ERR_CANCELED')
+    if (
+      current === version &&
+      currentLoad === loadVersion &&
+      e.code !== 'ERR_CANCELED'
+    )
       error.value = label('LOAD_ERROR');
   }
 };
-const perform = async action => {
+const perform = async (action, nextPhase = 'working') => {
   if (busy.value) return;
   const current = version;
+  loadVersion += 1;
+  abort?.abort();
   busy.value = true;
+  phase.value = nextPhase;
   error.value = '';
   try {
     const { data } = await action();
     if (current !== version) return;
     apply(data);
-    voice.speak(data.messages.at(-1)?.content);
+    if (visible.value) voice.speak(data.messages.at(-1)?.content);
     await nextTick();
-    scroller.value?.scrollTo({ top: scroller.value.scrollHeight });
+    if (fullVisible.value) scrollToCurrent();
     return data;
   } catch {
     if (current === version) {
@@ -165,12 +236,14 @@ const ask = async prompt => {
   focusedNoticeId.value = null;
   input.value = '';
   voice.stop();
-  await perform(() =>
-    api.ask(accountId.value, {
-      message,
-      request_id: crypto.randomUUID(),
-      conversation_id: conversationId.value,
-    })
+  await perform(
+    () =>
+      api.ask(accountId.value, {
+        message,
+        request_id: crypto.randomUUID(),
+        conversation_id: conversationId.value,
+      }),
+    'submitting'
   );
 };
 const navigate = async result => {
@@ -230,7 +303,10 @@ const browserAction = async command => {
   if (busy.value) return;
   const current = version;
   const account = accountId.value;
+  loadVersion += 1;
+  abort?.abort();
   busy.value = true;
+  phase.value = 'working';
   error.value = '';
   let claimed = false;
   let status = 'unknown';
@@ -311,7 +387,7 @@ watch(
     version += 1;
     abort?.abort();
     voice.stop();
-    window.speechSynthesis?.cancel();
+    voice.stopSpeaking();
     input.value = '';
     busy.value = false;
     error.value = '';
@@ -331,15 +407,44 @@ watch(pendingPrompt, value => {
 });
 watch(visible, async value => {
   if (value) {
-    load();
+    await load();
     await nextTick();
-    if (!props.embedded) panelRoot.value?.focus({ preventScroll: true });
+    if (fullVisible.value) scrollToCurrent();
   }
   if (!value) {
     voice.stop();
-    window.speechSynthesis?.cancel();
+    voice.stopSpeaking();
   }
 });
+watch(fullVisible, async value => {
+  if (value && !props.embedded) {
+    await nextTick();
+    panelRoot.value?.focus({ preventScroll: true });
+    scrollToCurrent();
+  }
+});
+const focusWithinMobilePanel = event => {
+  if (props.embedded || windowWidth.value >= 640) return;
+  const controls = Array.from(
+    panelRoot.value.querySelectorAll(
+      'button, textarea, input, select, summary, a[href]'
+    )
+  ).filter(element => !element.disabled && element.getClientRects().length);
+  if (!controls.length) return;
+  const first = controls[0];
+  const last = controls.at(-1);
+  if (
+    event.shiftKey &&
+    (document.activeElement === first ||
+      document.activeElement === panelRoot.value)
+  ) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};
 watch(focusedNoticeId, () => load());
 onMounted(async () => {
   await load();
@@ -354,31 +459,53 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <JrcCopilotQuickPanel
+    v-if="!embedded && mode === 'quick'"
+    v-model="input"
+    :voice="voice"
+    :busy="busy"
+    :in-call="inCall"
+    :context-label="contextLabel"
+    :interaction-state="interactionState"
+    :has-operation="hasOperation"
+    :reply="quickReply"
+    :error="error"
+    :needs-review="
+      pending.some(command =>
+        ['awaiting_confirmation', 'browser_pending'].includes(command.status)
+      )
+    "
+    :unread-count="unreadNotices.length"
+    @send="ask()"
+    @expand="open"
+    @close="close"
+    @notice="openNotice(unreadNotices[0].id)"
+  />
   <aside
-    v-if="visible"
+    v-if="fullVisible"
+    :id="embedded ? undefined : 'nico-operator-panel'"
     ref="panelRoot"
     tabindex="-1"
-    :id="embedded ? undefined : 'nico-operator-panel'"
+    :role="!embedded && windowWidth < 640 ? 'dialog' : 'complementary'"
+    :aria-modal="!embedded && windowWidth < 640 ? true : undefined"
     :aria-label="label('TITLE')"
-    class="flex min-h-0 shrink-0 flex-col overflow-hidden border-t border-n-weak bg-n-solid-2 shadow-sm min-[1920px]:border-l"
+    class="z-40 flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l border-n-weak bg-n-solid-2 shadow-xl"
     :class="
       embedded
         ? 'h-full w-full'
-        : 'h-full sm:h-[42vh] w-full min-[1920px]:h-full min-[1920px]:w-[380px]'
+        : 'absolute inset-y-0 end-0 h-full w-full sm:w-[400px] 2xl:static 2xl:w-[400px] min-[1920px]:w-[420px]'
     "
+    @keydown.esc.stop.prevent="!embedded && close()"
+    @keydown.tab="focusWithinMobilePanel"
   >
     <header
       class="flex shrink-0 items-center gap-2 border-b border-n-weak bg-n-alpha-2 px-3 py-2"
     >
       <img :src="avatarUrl" alt="" class="size-9 rounded-full" />
       <div class="min-w-0 flex-1">
-        <h2 class="text-sm font-semibold">{{ label('TITLE') }}</h2>
+        <h2 class="text-sm font-semibold">{{ t('JRC_NICO.UX.FULL_TITLE') }}</h2>
         <p class="truncate text-xs text-n-slate-11">
-          {{
-            conversationId
-              ? t('JRC_NICO.OPERATOR.CONTEXT', { id: conversationId })
-              : label('PRIVATE')
-          }}
+          {{ contextLabel }}
         </p>
       </div>
       <button
@@ -408,6 +535,12 @@ onBeforeUnmount(() => {
         <span class="i-lucide-chevron-down size-5" />
       </button>
     </header>
+    <div class="shrink-0 px-3 pt-3">
+      <NicoInteractionStatus
+        :state="interactionState"
+        :show-timeline="hasOperation"
+      />
+    </div>
     <div
       ref="scroller"
       class="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
@@ -502,144 +635,7 @@ onBeforeUnmount(() => {
         v-if="knowledgeOpen && state.can_manage_knowledge"
         :account-id="accountId"
       />
-      <section
-        v-if="notices.length"
-        class="space-y-2 rounded border border-n-weak p-2"
-      >
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="text-xs font-semibold">{{ label('NOTICES') }}</h3>
-          <button
-            v-if="focusedNoticeId"
-            type="button"
-            class="text-xs text-n-blue-11"
-            @click="focusedNoticeId = null"
-          >
-            {{ label('ALL_ACTIONS') }}
-          </button>
-        </div>
-        <article
-          v-for="notice in notices.slice(0, 8)"
-          :key="notice.id"
-          class="border-t border-n-weak pt-2 text-xs"
-        >
-          <button
-            type="button"
-            class="font-semibold text-n-blue-11"
-            @click="openNotice(notice.id)"
-          >
-            {{ notice.contact_name || label('TITLE') }}
-          </button>
-          <p class="mt-1 whitespace-pre-wrap">{{ notice.body }}</p>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <button
-              v-if="notice.kind === 'action' && notice.status === 'failed'"
-              type="button"
-              :disabled="busy"
-              class="rounded border border-n-weak px-2 py-1 text-n-blue-11"
-              @click="perform(() => api.retryNotice(accountId, notice.id))"
-            >
-              {{ label('RETRY_REQUEST') }}
-            </button>
-            <button
-              v-if="notice.kind === 'action'"
-              type="button"
-              class="rounded border border-n-weak px-2 py-1"
-              @click="openNotice(notice.id)"
-            >
-              {{ label('REVIEW_ACTIONS') }}
-            </button>
-            <button
-              v-if="notice.conversation_id"
-              type="button"
-              class="text-n-blue-11"
-              @click="openConversation(notice.conversation_id)"
-            >
-              {{ label('OPEN_CONVERSATION') }}
-            </button>
-          </div>
-        </article>
-      </section>
-      <details v-if="conversationId" class="rounded border border-n-weak p-2">
-        <summary class="cursor-pointer text-xs font-medium">
-          {{ label('SPECIALISTS') }}
-        </summary>
-        <NicoConversationPanel
-          :account-id="accountId"
-          :conversation-id="conversationId"
-          :can-manage="state.can_manage_knowledge"
-        />
-      </details>
-      <details
-        v-if="state.delegations.length"
-        class="rounded border border-n-weak p-2"
-        :open="
-          state.delegations.some(d =>
-            ['active', 'needs_human'].includes(d.status)
-          )
-        "
-      >
-        <summary class="cursor-pointer text-xs font-medium">
-          {{ label('DELEGATIONS') }}
-        </summary>
-        <div
-          v-for="delegation in state.delegations"
-          :key="delegation.id"
-          class="mt-2 border-t border-n-weak pt-2 text-xs"
-        >
-          <button
-            class="font-medium text-n-blue-11"
-            type="button"
-            @click="openConversation(delegation.conversation_id)"
-          >
-            {{ delegation.contact_name }} · {{ delegation.conversation_id }}
-          </button>
-          <p>{{ t(`JRC_NICO.OPERATOR.STATES.${delegation.status}`) }}</p>
-          <p
-            v-if="delegation.summary"
-            class="mt-1 line-clamp-2 whitespace-pre-wrap"
-            :title="delegation.summary"
-          >
-            {{ delegation.summary }}
-          </p>
-          <button
-            v-if="['active', 'needs_human'].includes(delegation.status)"
-            :disabled="busy"
-            type="button"
-            class="mt-2 rounded border border-n-weak px-2 py-1"
-            @click="
-              perform(() => api.takeover(accountId, delegation.conversation_id))
-            "
-          >
-            {{ label('TAKEOVER') }}
-          </button>
-        </div>
-      </details>
-      <details
-        v-if="state.suggestions.length"
-        class="rounded border border-n-weak p-2"
-      >
-        <summary class="cursor-pointer text-xs">
-          {{
-            t('JRC_NICO.OPERATOR.SUGGESTIONS', {
-              count: state.suggestions.length,
-            })
-          }}
-        </summary>
-        <button
-          v-for="suggestion in state.suggestions"
-          :key="suggestion.conversation_id"
-          type="button"
-          class="mt-2 block text-left text-xs text-n-blue-11"
-          @click="openConversation(suggestion.conversation_id)"
-        >
-          {{
-            t('JRC_NICO.OPERATOR.SUGGESTION', {
-              name: suggestion.name,
-              id: suggestion.conversation_id,
-            })
-          }}
-        </button>
-      </details>
+      <h3 class="sr-only">{{ t('JRC_NICO.UX.CHAT_TITLE') }}</h3>
       <p v-if="!state.messages.length" class="text-sm text-n-slate-11">
         {{ label('GREETING') }}
       </p>
@@ -654,6 +650,9 @@ onBeforeUnmount(() => {
       <div
         v-for="(message, index) in messages"
         :key="`${message.at}-${index}`"
+        :data-nico-last-message="
+          index === messages.length - 1 ? 'true' : undefined
+        "
         class="flex"
         :class="message.role === 'user' ? 'justify-end' : ''"
       >
@@ -667,7 +666,13 @@ onBeforeUnmount(() => {
       <article
         v-for="command in pending"
         :key="command.id"
-        class="space-y-2 rounded-xl border border-n-weak p-3"
+        data-nico-command
+        class="space-y-3 rounded-xl border p-3"
+        :class="
+          command.status === 'awaiting_confirmation'
+            ? 'border-n-amber-6 bg-n-amber-2'
+            : 'border-n-weak'
+        "
       >
         <button
           v-if="command.source_conversation_id"
@@ -677,17 +682,33 @@ onBeforeUnmount(() => {
         >
           {{ command.source_contact }} · #{{ command.source_conversation_id }}
         </button>
-        <p class="text-xs font-semibold">
+        <h3
+          v-if="command.status === 'awaiting_confirmation'"
+          class="flex items-center gap-2 text-sm font-semibold text-n-amber-11"
+        >
+          <span
+            class="i-lucide-shield-check size-5 shrink-0"
+            aria-hidden="true"
+          />
+          {{ t('JRC_NICO.UX.CONFIRM_TITLE') }}
+        </h3>
+        <p v-else class="text-xs font-semibold">
           {{ t(`JRC_NICO.OPERATOR.STATES.${command.status}`) }}
         </p>
         <p class="text-sm">{{ toolLabel(command) }}</p>
+        <p
+          v-if="command.status === 'awaiting_confirmation'"
+          class="text-xs text-n-slate-11"
+        >
+          {{ t('JRC_NICO.UX.CONFIRM_HINT') }}
+        </p>
         <p
           v-if="command.authorization?.source === 'delegation'"
           class="text-xs text-n-teal-11"
         >
           {{ label('DELEGATED_AUTHORIZATION') }}
         </p>
-        <dl class="space-y-1 text-xs">
+        <dl class="space-y-2 rounded-lg bg-n-solid-2 p-3 text-xs">
           <div
             v-for="(value, field) in command.arguments"
             :key="field"
@@ -696,7 +717,7 @@ onBeforeUnmount(() => {
             <dt class="text-n-slate-11">
               {{ t(`JRC_NICO.OPERATOR.FIELDS.${field}`) }}
             </dt>
-            <dd class="break-words">{{ formatValue(value, field) }}</dd>
+            <dd class="min-w-0 break-words">{{ formatValue(value, field) }}</dd>
           </div>
         </dl>
         <div class="flex flex-wrap gap-2">
@@ -768,78 +789,166 @@ onBeforeUnmount(() => {
           </button>
         </article>
       </details>
-      <p v-if="busy" role="status" class="text-xs text-n-slate-11">
-        {{ label('WORKING') }}
-      </p>
+      <details
+        class="rounded-xl border border-n-weak p-3"
+        :open="Boolean(focusedNoticeId)"
+      >
+        <summary class="cursor-pointer text-xs font-semibold text-n-slate-11">
+          {{ t('JRC_NICO.UX.SECONDARY') }}
+        </summary>
+        <div class="mt-3 space-y-3">
+          <section
+            v-if="notices.length"
+            class="space-y-2 rounded border border-n-weak p-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-xs font-semibold">{{ label('NOTICES') }}</h3>
+              <button
+                v-if="focusedNoticeId"
+                type="button"
+                class="text-xs text-n-blue-11"
+                @click="focusedNoticeId = null"
+              >
+                {{ label('ALL_ACTIONS') }}
+              </button>
+            </div>
+            <article
+              v-for="notice in notices.slice(0, 8)"
+              :key="notice.id"
+              class="border-t border-n-weak pt-2 text-xs"
+            >
+              <button
+                type="button"
+                class="font-semibold text-n-blue-11"
+                @click="openNotice(notice.id)"
+              >
+                {{ notice.contact_name || label('TITLE') }}
+              </button>
+              <p class="mt-1 whitespace-pre-wrap">{{ notice.body }}</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button
+                  v-if="notice.kind === 'action' && notice.status === 'failed'"
+                  type="button"
+                  :disabled="busy"
+                  class="rounded border border-n-weak px-2 py-1 text-n-blue-11"
+                  @click="perform(() => api.retryNotice(accountId, notice.id))"
+                >
+                  {{ label('RETRY_REQUEST') }}
+                </button>
+                <button
+                  v-if="notice.kind === 'action'"
+                  type="button"
+                  class="rounded border border-n-weak px-2 py-1"
+                  @click="openNotice(notice.id)"
+                >
+                  {{ label('REVIEW_ACTIONS') }}
+                </button>
+                <button
+                  v-if="notice.conversation_id"
+                  type="button"
+                  class="text-n-blue-11"
+                  @click="openConversation(notice.conversation_id)"
+                >
+                  {{ label('OPEN_CONVERSATION') }}
+                </button>
+              </div>
+            </article>
+          </section>
+          <details
+            v-if="conversationId"
+            class="rounded border border-n-weak p-2"
+          >
+            <summary class="cursor-pointer text-xs font-medium">
+              {{ label('SPECIALISTS') }}
+            </summary>
+            <NicoConversationPanel
+              :account-id="accountId"
+              :conversation-id="conversationId"
+              :can-manage="state.can_manage_knowledge"
+            />
+          </details>
+          <details
+            v-if="state.delegations.length"
+            class="rounded border border-n-weak p-2"
+            :open="
+              state.delegations.some(d =>
+                ['active', 'needs_human'].includes(d.status)
+              )
+            "
+          >
+            <summary class="cursor-pointer text-xs font-medium">
+              {{ label('DELEGATIONS') }}
+            </summary>
+            <div
+              v-for="delegation in state.delegations"
+              :key="delegation.id"
+              class="mt-2 border-t border-n-weak pt-2 text-xs"
+            >
+              <button
+                class="font-medium text-n-blue-11"
+                type="button"
+                @click="openConversation(delegation.conversation_id)"
+              >
+                {{ delegation.contact_name }} · {{ delegation.conversation_id }}
+              </button>
+              <p>{{ t(`JRC_NICO.OPERATOR.STATES.${delegation.status}`) }}</p>
+              <p
+                v-if="delegation.summary"
+                class="mt-1 line-clamp-2 whitespace-pre-wrap"
+                :title="delegation.summary"
+              >
+                {{ delegation.summary }}
+              </p>
+              <button
+                v-if="['active', 'needs_human'].includes(delegation.status)"
+                :disabled="busy"
+                type="button"
+                class="mt-2 rounded border border-n-weak px-2 py-1"
+                @click="
+                  perform(() =>
+                    api.takeover(accountId, delegation.conversation_id)
+                  )
+                "
+              >
+                {{ label('TAKEOVER') }}
+              </button>
+            </div>
+          </details>
+          <details
+            v-if="state.suggestions.length"
+            class="rounded border border-n-weak p-2"
+          >
+            <summary class="cursor-pointer text-xs">
+              {{
+                t('JRC_NICO.OPERATOR.SUGGESTIONS', {
+                  count: state.suggestions.length,
+                })
+              }}
+            </summary>
+            <button
+              v-for="suggestion in state.suggestions"
+              :key="suggestion.conversation_id"
+              type="button"
+              class="mt-2 block text-left text-xs text-n-blue-11"
+              @click="openConversation(suggestion.conversation_id)"
+            >
+              {{
+                t('JRC_NICO.OPERATOR.SUGGESTION', {
+                  name: suggestion.name,
+                  id: suggestion.conversation_id,
+                })
+              }}
+            </button>
+          </details>
+        </div>
+      </details>
     </div>
-    <footer class="shrink-0 space-y-1 border-t border-n-weak px-3 py-2">
-      <form class="flex items-end gap-2" @submit.prevent="ask()">
-        <textarea
-          v-model="input"
-          :aria-label="label('INPUT')"
-          :placeholder="label('INPUT')"
-          maxlength="4000"
-          rows="2"
-          class="min-w-0 flex-1 resize-none rounded border border-n-weak bg-n-solid-2 p-2 text-sm"
-          @keydown.enter.exact.prevent="ask()"
-        />
-        <button
-          type="button"
-          :disabled="
-            !voice.supported || inCall || busy || voice.transcribing.value
-          "
-          class="rounded border border-n-weak p-2 disabled:opacity-40"
-          :aria-label="
-            voice.listening.value ? label('STOP_VOICE') : label('VOICE')
-          "
-          :aria-pressed="voice.listening.value"
-          @click="voice.start"
-        >
-          <span
-            :class="voice.listening.value ? 'i-lucide-square' : 'i-lucide-mic'"
-            class="size-5"
-          />
-        </button>
-        <button
-          type="submit"
-          :disabled="busy || !input.trim()"
-          class="rounded bg-n-blue-10 p-2 text-white disabled:opacity-40"
-          :aria-label="label('SEND')"
-        >
-          <span class="i-lucide-send size-5" />
-        </button>
-      </form>
-      <div
-        class="flex flex-wrap items-center justify-between gap-2 text-xs text-n-slate-11"
-      >
-        <span>{{
-          voice.transcribing.value
-            ? label('TRANSCRIBING')
-            : voice.listening.value
-              ? label('LISTENING')
-              : voice.supported
-                ? label('VOICE_REVIEW')
-                : label('VOICE_UNAVAILABLE')
-        }}</span
-        ><label class="flex items-center gap-1"
-          ><input
-            v-model="voice.speakingEnabled.value"
-            type="checkbox"
-            :disabled="inCall"
-          />{{ label('SPEAK') }}</label
-        >
-      </div>
-      <p v-if="voice.error.value" role="alert" class="text-xs text-n-ruby-11">
-        {{ label('VOICE_ERROR') }}
-      </p>
-      <button
-        v-if="voice.listening.value || voice.transcribing.value"
-        type="button"
-        class="text-xs text-n-blue-11"
-        @click="voice.stop"
-      >
-        {{ label('CANCEL') }}
-      </button>
-    </footer>
+    <NicoComposer
+      v-model="input"
+      :voice="voice"
+      :busy="busy"
+      :in-call="inCall"
+      @send="ask()"
+    />
   </aside>
 </template>

@@ -17,7 +17,8 @@ const route = useRoute();
 const { t } = useI18n();
 const label = key => t(`JRC_NICO.OPERATOR.${key}`);
 const avatarUrl = '/brand-assets/jrc-copilot-avatar.png';
-const { isOpen, open, notices, focusedNoticeId, openNotice } = useJrcCopilot();
+const { mode, isOpen, openQuick, notices, focusedNoticeId, openNotice } =
+  useJrcCopilot();
 const accountId = computed(() => Number(route.params.accountId));
 const unread = computed(() => notices.value.filter(notice => notice.unread));
 const latest = computed(() => unread.value[0]);
@@ -81,7 +82,7 @@ const resumeBubble = async () => {
 const openAssistant = () => {
   dismissBubble();
   focusedNoticeId.value = null;
-  open();
+  openQuick();
 };
 watch(latestVersion, value => {
   if (value) showBubble();
@@ -118,9 +119,9 @@ onBeforeUnmount(() => {
 
 <template>
   <section
-    v-show="!isOpen"
+    v-show="mode !== 'full'"
     :aria-label="label('NOTICES')"
-    class="pointer-events-none absolute end-2 z-30 flex w-14 flex-col items-center gap-1 sm:end-3 sm:w-[72px]"
+    class="pointer-events-none absolute end-2 z-40 flex w-14 flex-col items-center gap-1 sm:end-3 sm:w-[72px]"
     :class="callActive ? 'top-4' : 'bottom-20 sm:bottom-4'"
     @keydown.esc.stop="dismissBubble"
   >
@@ -136,7 +137,7 @@ onBeforeUnmount(() => {
       leave-to-class="opacity-0 translate-y-1"
     >
       <div
-        v-if="bubbleOpen && !callActive"
+        v-if="bubbleOpen && !callActive && mode === 'closed'"
         ref="bubble"
         class="pointer-events-auto absolute bottom-full end-0 mb-3 w-[min(304px,calc(100vw-2rem))] rounded-2xl border border-n-weak bg-n-solid-2 p-3 shadow-xl"
         @mouseenter="pauseBubble"
@@ -202,7 +203,7 @@ onBeforeUnmount(() => {
       class="pointer-events-auto relative grid size-14 shrink-0 place-content-center rounded-full border-2 border-white bg-gradient-to-br from-n-blue-3 to-n-teal-3 shadow-lg ring-1 ring-n-blue-6 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-n-blue-7 motion-safe:transition motion-safe:duration-200 motion-safe:hover:-translate-y-1 sm:size-[72px]"
       :aria-label="label('OPEN_ASSISTANT')"
       :aria-expanded="isOpen"
-      aria-controls="nico-operator-panel"
+      aria-controls="nico-quick-panel"
       :title="label('OPERATOR_COMPANION')"
       @mouseenter="showBubble"
       @focus="showBubble"

@@ -1,42 +1,97 @@
-import { ref, onBeforeUnmount, watch } from 'vue';
+import { ref, onScopeDispose, watch } from 'vue';
 
-export const useNicoVoice = ({ onTranscript, transcribe, inCall }) => {
+export const NICO_VOICE_REVIEW_MS = 1500;
+const MAX_AUDIO_BYTES = 4194304;
+
+export const useNicoVoice = ({
+  onTranscript,
+  onSubmit,
+  transcribe,
+  inCall,
+  context,
+  canSubmit,
+}) => {
   const supported = Boolean(
     navigator.mediaDevices?.getUserMedia && window.MediaRecorder
   );
+  const requesting = ref(false);
   const listening = ref(false);
   const transcribing = ref(false);
+  const reviewing = ref(false);
   const error = ref('');
   const speakingEnabled = ref(false);
+  const speaking = ref(false);
   let recorder;
   let stream;
   let timer;
+  let reviewTimer;
   let request;
   let generation = 0;
+  let speechGeneration = 0;
+
+  const cancelReview = () => {
+    clearTimeout(reviewTimer);
+    reviewing.value = false;
+  };
   const release = () => {
     clearTimeout(timer);
     stream?.getTracks().forEach(track => track.stop());
     stream = undefined;
   };
-  // Cancellation never sends recorded audio or retains a late transcript after changing account/call.
+  const stopSpeaking = () => {
+    speechGeneration += 1;
+    speaking.value = false;
+    window.speechSynthesis?.cancel();
+  };
+  // Cancellation invalidates capture, permission requests, upload and the review timer.
   const stop = () => {
     generation += 1;
+    error.value = '';
+    cancelReview();
     request?.abort();
     if (recorder?.state === 'recording') recorder.stop();
     release();
+    requesting.value = false;
     listening.value = false;
     transcribing.value = false;
   };
+  const reviewTranscript = (text, current) => {
+    onTranscript(text);
+    if (!onSubmit) return;
+    reviewing.value = true;
+    reviewTimer = setTimeout(() => {
+      if (
+        current !== generation ||
+        !reviewing.value ||
+        inCall.value ||
+        (canSubmit && !canSubmit.value)
+      ) {
+        cancelReview();
+        return;
+      }
+      // Consume the review before calling ask; manual submit cannot reuse this timer.
+      cancelReview();
+      onSubmit(text);
+    }, NICO_VOICE_REVIEW_MS);
+  };
   const start = async () => {
     error.value = '';
-    if (!supported || inCall.value || transcribing.value) return;
+    if (
+      !supported ||
+      inCall.value ||
+      transcribing.value ||
+      requesting.value ||
+      (canSubmit && !canSubmit.value)
+    )
+      return;
     if (listening.value) {
       recorder?.stop();
       return;
     }
     stop();
+    stopSpeaking();
     const current = generation;
-    window.speechSynthesis?.cancel();
+    requesting.value = true;
     try {
       const acquired = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -56,19 +111,23 @@ export const useNicoVoice = ({ onTranscript, transcribe, inCall }) => {
       });
       const chunks = [];
       let size = 0;
+      let uploaded = false;
       recorder.ondataavailable = event => {
+        if (current !== generation) return;
         size += event.data.size;
-        if (size > 4194304) {
+        if (size > MAX_AUDIO_BYTES) {
           stop();
           error.value = 'too_large';
         } else chunks.push(event.data);
       };
       recorder.onerror = () => {
+        if (current !== generation) return;
         stop();
         error.value = 'recording_failed';
       };
       recorder.onstop = async () => {
-        if (current !== generation) return;
+        if (current !== generation || uploaded) return;
+        uploaded = true;
         release();
         listening.value = false;
         transcribing.value = true;
@@ -78,7 +137,13 @@ export const useNicoVoice = ({ onTranscript, transcribe, inCall }) => {
             new Blob(chunks, { type: mimeType }),
             request.signal
           );
-          if (current === generation && !inCall.value) onTranscript(data.text);
+          if (current !== generation || inCall.value) return;
+          const text = String(data.text || '').trim();
+          if (!text) {
+            error.value = 'empty_transcript';
+            return;
+          }
+          reviewTranscript(text, current);
         } catch (e) {
           if (current === generation && e.code !== 'ERR_CANCELED')
             error.value = 'transcription_failed';
@@ -88,11 +153,13 @@ export const useNicoVoice = ({ onTranscript, transcribe, inCall }) => {
       };
       recorder.start(1000);
       listening.value = true;
+      requesting.value = false;
       timer = setTimeout(
         () => recorder?.state === 'recording' && recorder.stop(),
         60000
       );
     } catch {
+      if (current !== generation) return;
       stop();
       error.value = 'unavailable';
     }
@@ -106,32 +173,62 @@ export const useNicoVoice = ({ onTranscript, transcribe, inCall }) => {
     )
       return;
     stop();
-    window.speechSynthesis.cancel();
+    stopSpeaking();
+    const current = speechGeneration;
     const utterance = new SpeechSynthesisUtterance(text.slice(0, 1000));
     utterance.lang = 'pt-BR';
+    utterance.onstart = () => {
+      if (current === speechGeneration && !inCall.value) speaking.value = true;
+    };
+    const finish = () => {
+      if (current === speechGeneration) speaking.value = false;
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
     window.speechSynthesis.speak(utterance);
   };
   watch(speakingEnabled, value => {
-    if (!value) window.speechSynthesis?.cancel();
+    if (!value) stopSpeaking();
   });
-  watch(inCall, value => {
-    if (value) {
-      stop();
-      window.speechSynthesis?.cancel();
-    }
-  });
-  onBeforeUnmount(() => {
+  watch(
+    inCall,
+    value => {
+      if (value) {
+        stop();
+        stopSpeaking();
+      }
+    },
+    { flush: 'sync' }
+  );
+  if (context)
+    watch(
+      context,
+      () => {
+        stop();
+        stopSpeaking();
+      },
+      { flush: 'sync' }
+    );
+  onScopeDispose(() => {
     stop();
-    window.speechSynthesis?.cancel();
+    stopSpeaking();
   });
   return {
     supported,
+    requesting,
     listening,
     transcribing,
+    reviewing,
     error,
     speakingEnabled,
+    speaking,
     start,
     stop,
     speak,
+    cancelReview,
+    stopSpeaking,
+    setSpeakingEnabled: value => {
+      speakingEnabled.value = value;
+    },
   };
 };

@@ -13,7 +13,7 @@ import CallCard from 'dashboard/components-next/call/CallCard.vue';
 import countriesList from 'shared/constants/countries.js';
 import { useJrcCopilot } from 'dashboard/components-next/jrcCopilot/useJrcCopilot';
 
-const { isOpen: nicoOpen } = useJrcCopilot();
+const { isFull: nicoOpen } = useJrcCopilot();
 
 const RINGTONE_URL = '/audio/dashboard/ringtone.mp3';
 
@@ -244,7 +244,7 @@ onBeforeUnmount(stopRingtone);
     class="fixed z-50 flex flex-col gap-3 w-[min(400px,calc(100vw-2rem))]"
     :class="
       nicoOpen
-        ? 'top-20 ltr:right-4 rtl:left-4 min-[1920px]:top-auto min-[1920px]:bottom-4 min-[1920px]:ltr:right-[396px] min-[1920px]:rtl:left-[396px]'
+        ? 'top-20 ltr:right-4 rtl:left-4 lg:top-auto lg:bottom-4 lg:ltr:right-[416px] lg:rtl:left-[416px] min-[1920px]:ltr:right-[436px] min-[1920px]:rtl:left-[436px]'
         : 'ltr:right-4 rtl:left-4 bottom-4'
     "
   >
