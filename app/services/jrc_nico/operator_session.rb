@@ -8,7 +8,7 @@ class JrcNico::OperatorSession
     check_history_access!
   end
 
-  def ask(message:, request_id:, conversation_id: nil, prepared: nil)
+  def ask(message:, request_id:, conversation_id: nil, prepared: nil, route_name: nil)
     command = nil
     existing = session.with_lock do
       existing = session.commands.find_by(request_id: request_id)
@@ -23,7 +23,8 @@ class JrcNico::OperatorSession
       workflow = prepared ? nil : request_id
       session.update!(context: session.context.merge('active_workflow_id' => workflow))
       command = session.commands.create!(request_id: request_id, message: message,
-        execution_context: { workflow_id: workflow, conversation_id: conversation_id.presence&.to_i }.compact)
+        execution_context: { workflow_id: workflow, conversation_id: conversation_id.presence&.to_i,
+                             route_name: JrcCopilot::TaskCatalog::ROUTE_GUIDES.key?(route_name) ? route_name : nil }.compact)
       session.append('user', message)
       nil
     end
@@ -154,7 +155,7 @@ class JrcNico::OperatorSession
         next
       end
       session.commands.create!(request_id: SecureRandom.uuid, message: previous.message,
-        execution_context: previous.execution_context.slice('workflow_id', 'conversation_id').merge('continuation_of' => previous.id))
+        execution_context: previous.execution_context.slice('workflow_id', 'conversation_id', 'route_name').merge('continuation_of' => previous.id))
     end
     plan(command, command.execution_context['conversation_id']) if command
   rescue StandardError => error
@@ -184,6 +185,9 @@ class JrcNico::OperatorSession
         when 'JrcCrm::Deal' then access.crm_scope(JrcCrm::Deal).find(id)
         when 'JrcCrm::Proposal' then access.crm_scope(JrcCrm::Proposal).find(id)
         when 'JrcCrm::Activity' then access.crm_scope(JrcCrm::Activity, owner: :user_id).find(id)
+        when 'AutomationRule'
+          rule = access.account.automation_rules.find(id)
+          raise Pundit::NotAuthorizedError unless access.account.feature_enabled?('automations') && access.policy(rule).show?
         when 'JrcNico::KnowledgeDocument' then JrcNico::KnowledgeDocument.where(account: access.account).approved.find(id)
         end
         true
@@ -200,6 +204,7 @@ class JrcNico::OperatorSession
   end
 
   def plan(command, conversation_id, notice: nil)
+    resolve_recipient_choice(command) unless notice
     catalog = JrcNico::ToolCatalog.new(access)
     selected = conversation_id.present? ? access.conversation(conversation_id) : nil
     if selected
@@ -207,7 +212,10 @@ class JrcNico::OperatorSession
     end
     context = {
       operator_id: access.user.id, tools: catalog.available, modules: JrcCopilot::TaskCatalog::ROUTE_GUIDES.transform_values { |v| v[:title] },
+      current_module: JrcCopilot::TaskCatalog::ROUTE_GUIDES[command.execution_context['route_name']],
+      module_guides: JrcCopilot::TaskCatalog::ROUTE_GUIDES.transform_values { |guide| guide.slice(:title, :summary) },
       last_result: session.context['last_result'], timezone: access.account.reporting_timezone,
+      selected_contact: !notice && session.context['selected_contact'],
       today: Time.current.in_time_zone(access.account.reporting_timezone.presence || 'UTC').iso8601,
       selected_conversation: selected && {
         conversation_id: selected.display_id, contact_id: selected.contact_id, name: selected.contact.name,
@@ -278,7 +286,7 @@ class JrcNico::OperatorSession
         item[:result] && item[:tool] == response['tool'] && item[:arguments] == response['arguments']
       end
       if previous_read
-        if %w[count_contacts list_contacts list_conversations read_conversation].include?(response['tool'])
+        if response['tool'] == 'count_contacts' && command.message.match?(/\A\s*(?:quantos contatos(?: temos(?: cadastrados)?)?|conte os contatos)[?.!]?\s*\z/i)
           reply = readable_read_summary(response['tool'], previous_read[:result])
           command.update!(status: 'succeeded', tool: response['tool'], arguments: response['arguments'],
                           result: previous_read[:result].as_json, reply: reply)
@@ -299,7 +307,9 @@ class JrcNico::OperatorSession
       end
       context[:tool_results] << { tool: response['tool'], arguments: response['arguments'], result: result }
       if response['tool'] == 'search_contacts' && result.size > 1
-        session.with_lock { session.update!(context: session.context.merge('ambiguous_contact_ids' => result.map { |row| row['id'] })) }
+        session.with_lock do
+          session.update!(context: session.context.merge('ambiguous_contact_ids' => result.map { |row| row['id'] }, 'selected_contact' => nil))
+        end
         command.update!(status: 'succeeded', reply: contact_choices(result))
         session.with_lock { session.append('assistant', command.reply) }
         return command
@@ -311,11 +321,26 @@ class JrcNico::OperatorSession
 
   def contact_choices(rows)
     options = rows.map do |row|
-      channels = Array(row[:conversations] || row['conversations']).map { |conversation| "#{conversation[:channel] || conversation['channel']} ##{conversation[:conversation_id] || conversation['conversation_id']}" }
-      "Contato ##{row['id']}: #{row['name']}; telefone #{row['phone_number'].presence || 'não cadastrado'}; " \
+      channels = Array(row[:conversations] || row['conversations']).map do |conversation|
+        (conversation[:channel] || conversation['channel']).to_s.delete_prefix('Channel::')
+      end.uniq
+      "#{row['name']}; telefone #{row['phone_number'].presence || 'não cadastrado'}; " \
         "email #{row['email'].presence || 'não cadastrado'}; conversas visíveis: #{channels.join(', ').presence || 'nenhuma na amostra'}."
     end
-    "Encontrei mais de um contato. Informe o contato #ID ou selecione uma conversa para definir o destinatário.\n#{options.join("\n")}"
+    "Encontrei mais de um contato. Escolha pelo nome completo, telefone ou email.\n#{options.join("\n")}"
+  end
+
+  def resolve_recipient_choice(command)
+    contacts = Array(session.context['ambiguous_contact_ids']).map { |id| access.contact(id) }
+    return if contacts.empty?
+
+    matches = JrcNico::RecipientChoice.match(command.message, contacts)
+    previous = session.context['selected_contact']
+    chosen = matches.one? ? matches.first : nil
+    confirmation = command.message.to_s.strip.match?(/\A(?:sim|confirmo|pode ligar|sim pode ligar|pode enviar|confirmado)[.!\s]*\z/i)
+    chosen ||= contacts.find { |contact| contact.id == previous['id'] } if matches.empty? && previous && confirmation
+    snapshot = chosen&.slice(:id, :name, :email, :phone_number)
+    session.with_lock { session.update!(context: session.context.merge('selected_contact' => snapshot)) }
   end
 
   def require_recipient_choice!(command, name, arguments)
@@ -330,12 +355,13 @@ class JrcNico::OperatorSession
     end
     return if (target_ids & candidates).empty? && name != 'create_contact'
 
-    selected = candidates.select { |id| command.message.match?(/(?:contato|ID)\s*#?#{id}\b/i) }
+    resolve_recipient_choice(command)
+    selected = [session.context.dig('selected_contact', 'id')].compact
     if command.execution_context['conversation_id']
       selected << access.conversation(command.execution_context['conversation_id']).contact_id
     end
     if selected.uniq.size != 1 || target_ids.empty? || target_ids.any? { |id| id != selected.first }
-      raise ArgumentError, 'Há contatos ambíguos. Informe o contato #ID ou selecione a conversa antes de preparar esta ação.'
+      raise ArgumentError, 'Há contatos ambíguos. Escolha pelo nome completo, telefone ou email antes de preparar esta ação.'
     end
   end
 
@@ -434,7 +460,7 @@ class JrcNico::OperatorSession
     nested = rows.flat_map { |row| row.is_a?(Hash) ? Array(row['conversations']) : [] }
     ids = (rows + nested).filter_map { |row| row['conversation_id'] if row.is_a?(Hash) }
     types = { 'search_contacts' => 'Contact', 'list_contacts' => 'Contact', 'list_leads' => 'JrcCrm::Lead', 'list_deals' => 'JrcCrm::Deal',
-              'list_activities' => 'JrcCrm::Activity', 'list_proposals' => 'JrcCrm::Proposal' }
+              'list_activities' => 'JrcCrm::Activity', 'list_proposals' => 'JrcCrm::Proposal', 'list_automations' => 'AutomationRule' }
     resources = rows.filter_map do |row|
       next unless row.is_a?(Hash)
 

@@ -9,7 +9,7 @@ ActiveRecord::Base.transaction do
     account = Account.find_by(name: name) || Account.create!(name: name, locale: 'pt_BR')
     abort 'Unexpected account IDs: use a fresh dedicated local database' unless account.id == index + 1
     account.update!(custom_attributes: account.custom_attributes.merge('nico_enabled' => true, 'nico_monthly_run_limit' => 1000, 'nico_monthly_token_limit' => 1_000_000))
-    account.enable_features!('jrc_crm', 'jrc_campaigns')
+    account.enable_features!('jrc_crm', 'jrc_campaigns', 'automations')
     user = User.find_by(email: email)
     unless user
       user = User.new(name: "Administrador #{name}", email: email, password: password, password_confirmation: password)

@@ -48,7 +48,7 @@ class JrcNico::ToolCatalog
                        %w[action* destination]],
     'open_video' => ['Abrir sala de videoconferência configurada para o operador', 'conversations', true, []],
     'open_module' => ['Navegar para um módulo existente usando route_name disponível no contexto', 'navigation', false, %w[route_name*]]
-  }.merge(JrcNico::ModuleActions::TOOLS).freeze
+  }.merge(JrcNico::ModuleActions::TOOLS).merge(JrcNico::AutomationActions::TOOLS).freeze
 
   def initialize(access)
     @access = access
@@ -56,6 +56,7 @@ class JrcNico::ToolCatalog
 
   def available
     TOOLS.filter_map do |name, (description, group, mutation, fields)|
+      next if group == 'automations' && !(@access.account.feature_enabled?('automations') && @access.policy(AutomationRule).create?)
       next if group == 'crm' && !@access.crm?
       next if group == 'crm_admin' && !(@access.crm? && @access.membership.administrator?)
       next if group == 'settings_admin' && !@access.membership.administrator?

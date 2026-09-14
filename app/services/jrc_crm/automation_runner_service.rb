@@ -15,6 +15,9 @@ module JrcCrm
     end
 
     def call
+      raise Pundit::NotAuthorizedError unless @rule.account_id == @account.id && @resource.account_id == @account.id
+      return { success: false, reason: :inactive } unless @rule.active? && @account.active? && @account.feature_enabled?('jrc_crm')
+
       # 1. Loop Protection: Maximum recursion depth
       if @depth >= MAX_EXECUTION_DEPTH
         record_skipped_execution("Max recursion depth of #{MAX_EXECUTION_DEPTH} reached. Execution aborted to prevent loops.")
@@ -77,7 +80,10 @@ module JrcCrm
       field = condition['field']
       operator = condition['operator']
       expected = condition['value']
-      actual = @resource.respond_to?(field) ? @resource.send(field) : nil
+      allowed_fields = %w[status source temperature value_cents priority activity_type name title]
+      raise ArgumentError, 'Unsupported automation condition field' unless allowed_fields.include?(field) && @resource.has_attribute?(field)
+
+      actual = @resource[field]
 
       case operator.to_s.downcase
       when 'equals', 'eq'
@@ -95,33 +101,38 @@ module JrcCrm
       when 'is_not_empty'
         actual.present?
       else
-        false
+        raise ArgumentError, 'Unsupported automation condition operator'
       end
     end
 
     def execute_actions
+      raise ArgumentError, 'Automation requires actions' if @rule.actions.blank?
+
       (@rule.actions || []).each do |action|
         case action['type']
         when 'move_stage'
-          if @resource.is_a?(JrcCrm::Deal) && action['stage_id'].present?
-            target_stage = @account.jrc_crm_stages.find_by(id: action['stage_id'])
-            if target_stage
-              JrcCrm::DealPipelineService.new(
-                deal: @resource,
-                stage: target_stage,
-                actor: nil
-              ).call
-            end
-          end
+          raise ArgumentError, 'Stage change requires a deal' unless @resource.is_a?(JrcCrm::Deal)
+
+          target_stage = @account.jrc_crm_stages.find(action.fetch('stage_id'))
+          result = JrcCrm::DealPipelineService.new(
+            deal: @resource,
+            stage: target_stage,
+            actor: nil
+          ).call
+          raise ArgumentError, result[:error] unless result[:success]
         when 'assign_owner'
-          if @resource.respond_to?(:owner_id=) && action['owner_id'].present?
-            @resource.update!(owner_id: action['owner_id'])
-          end
+          raise ArgumentError, 'Resource does not support ownership' unless @resource.has_attribute?(:owner_id)
+
+          owner = @account.users.find(action.fetch('owner_id'))
+          @resource.update!(owner_id: owner.id)
         when 'create_activity'
+          raise ArgumentError, 'Activity requires a lead or deal' unless @resource.is_a?(JrcCrm::Lead) || @resource.is_a?(JrcCrm::Deal)
+
+          user = @account.users.find(action['user_id'] || @resource.owner_id)
           @account.jrc_crm_activities.create!(
             deal_id: @resource.is_a?(JrcCrm::Deal) ? @resource.id : nil,
             lead_id: @resource.is_a?(JrcCrm::Lead) ? @resource.id : nil,
-            user_id: action['user_id'] || @resource.try(:owner_id),
+            user_id: user.id,
             activity_type: action['activity_type'] || 'task',
             title: action['title'] || 'Atividade Automática',
             due_at: (action['due_offset_days'] || 1).to_i.days.from_now
@@ -135,6 +146,8 @@ module JrcCrm
             action['event_name'] || @event_type,
             { correlation_id: @correlation_id, depth: @depth + 1 }
           )
+        else
+          raise ArgumentError, 'Unsupported automation action'
         end
       end
     end

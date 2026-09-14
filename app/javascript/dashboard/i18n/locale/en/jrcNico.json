@@ -1,5 +1,14 @@
 {
   "JRC_NICO": {
+    "WORKFLOW": {
+      "TITLE": "Etapas deste pedido",
+      "COUNT": "{count} ação(ões) com execução registrada",
+      "partial": "Pedido com etapas pendentes ou falhas",
+      "failed": "Pedido interrompido; confira os detalhes",
+      "pending": "Pedido em andamento ou aguardando revisão",
+      "recorded": "Confira os resultados registrados de cada etapa",
+      "answered": "Resposta informativa; nenhuma nova ação registrada"
+    },
     "UX": {
       "QUICK_TITLE": "Quick NICO",
       "FULL_TITLE": "Full Copilot · NICO",

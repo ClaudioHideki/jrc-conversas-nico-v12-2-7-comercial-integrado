@@ -13,6 +13,7 @@ function Invoke-NicoDocker {
 $nicoProject = Split-Path -Parent $PSScriptRoot
 Push-Location $nicoProject
 try {
+  New-Item -ItemType Directory -Force log, tmp/pids, storage | Out-Null
   & (Join-Path $PSScriptRoot 'nico-local-env.ps1')
   Invoke-NicoDocker @('info', '--format', '{{.ServerVersion}}')
   & docker image inspect jrc-nico-test:local --format '{{.Id}}' 2>$null

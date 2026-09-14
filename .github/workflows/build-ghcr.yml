@@ -1,10 +1,11 @@
-name: Build JRC Conversas NICO V12.2.9
+name: Build JRC Conversas NICO Platform
 
 on:
   push:
     branches:
       - main
       - codex/nico-v12-2-9-json-execucao
+      - codex/nico-platform-refactor
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_TAG: 4.16.2-jrc-nico-v12-2-9-20260914
+  IMAGE_TAG: 4.16.2-jrc-nico-platform-20260914
 
 jobs:
   build-and-push:
@@ -61,6 +62,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,scope=${{ matrix.component }},mode=max
           provenance: false

@@ -76,19 +76,20 @@ RSpec.describe 'NICO JSON execution boundary', type: :request do
     end
   end
 
-  it 'presents real duplicate IDs, phone numbers and visible channels, and blocks a silent recipient choice' do
+  it 'presents names and phones, accepts a phone choice and blocks a silent recipient choice' do
     conversation
     duplicate = create(:contact, account: account, name: 'Telmo Miranda', phone_number: '+5511981234567')
     create(:conversation, account: account, contact: duplicate)
     allow(JrcNico::OperationalInference).to receive(:call).and_return('reply' => '', 'tool' => 'search_contacts', 'arguments' => { 'query' => 'Telmo Miranda' })
     command = operator.ask(message: 'Localize o contato Telmo Miranda.', request_id: SecureRandom.uuid)
-    expect(command.reply).to include("Contato ##{contact.id}", "Contato ##{duplicate.id}", contact.phone_number, duplicate.phone_number, conversation.inbox.channel_type)
+    expect(command.reply).to include(contact.name, contact.phone_number, duplicate.phone_number,
+                                     conversation.inbox.channel_type.delete_prefix('Channel::'))
     expect(account.contacts.count).to eq(2)
     allow(JrcNico::OperationalInference).to receive(:call).and_return('reply' => 'Assumir', 'tool' => 'update_conversation',
       'arguments' => { 'conversation_id' => conversation.display_id, 'assignee_id' => user.id })
     expect { operator.ask(message: 'Assuma a conversa mais recente do Telmo.', request_id: SecureRandom.uuid) }
       .to raise_error(ArgumentError, /contatos ambíguos/)
-    chosen = operator.ask(message: "Assuma a conversa do contato ##{contact.id}.", request_id: SecureRandom.uuid)
+    chosen = operator.ask(message: "Assuma a conversa do telefone #{contact.phone_number}.", request_id: SecureRandom.uuid)
     expect(chosen.status).to eq('awaiting_confirmation')
     operator.execute(chosen)
     expect(conversation.reload.assignee_id).to eq(user.id)

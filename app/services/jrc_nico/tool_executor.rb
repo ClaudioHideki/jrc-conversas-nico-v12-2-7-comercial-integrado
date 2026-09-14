@@ -7,6 +7,7 @@ class JrcNico::ToolExecutor
 
   def call(name, arguments)
     JrcNico::ToolCatalog.new(@access).validate!(name, arguments)
+    return JrcNico::AutomationActions.new(@access).call(name, arguments) if JrcNico::AutomationActions::TOOLS.key?(name)
     return JrcNico::CommercialActions.new(@access).call(name, arguments) if JrcNico::CommercialActions::TOOLS.include?(name)
     return JrcNico::ModuleActions.new(@access).prepare(name, arguments) if JrcNico::ModuleActions::TOOLS.key?(name)
 
@@ -131,7 +132,9 @@ class JrcNico::ToolExecutor
   end
 
   def delegate_conversations
-    JrcNico::DelegationService.new(@access).start(@args)
+    delegations = JrcNico::DelegationService.new(@access).start(@args)
+    { message: "Atendimento temporário delegado em #{delegations.size} conversa(s). Nenhuma regra recorrente foi criada.",
+      operation_kind: 'temporary_delegation', conversations: delegations }
   end
 
   def take_over

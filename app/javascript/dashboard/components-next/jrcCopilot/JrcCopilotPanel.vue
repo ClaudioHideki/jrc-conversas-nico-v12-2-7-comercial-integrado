@@ -245,6 +245,7 @@ const ask = async prompt => {
         message,
         request_id: crypto.randomUUID(),
         conversation_id: conversationId.value,
+        route_name: route.name,
       }),
     'submitting'
   );
@@ -543,6 +544,15 @@ onBeforeUnmount(() => {
         :state="interactionState"
         :show-timeline="hasOperation"
       />
+      <details v-if="state.workflow" class="mt-2 rounded border border-n-weak p-2 text-xs" aria-live="polite">
+        <summary class="cursor-pointer font-medium">
+          {{ t(`JRC_NICO.WORKFLOW.${state.workflow.state}`) }}
+        </summary>
+        <p class="mt-2">{{ t('JRC_NICO.WORKFLOW.COUNT', { count: state.workflow.completed_count }) }}</p>
+        <ol class="mt-2 space-y-2" :aria-label="t('JRC_NICO.WORKFLOW.TITLE')">
+          <li v-for="step in state.workflow.steps" :key="step.id">{{ step.reply }}</li>
+        </ol>
+      </details>
     </div>
     <div
       ref="scroller"

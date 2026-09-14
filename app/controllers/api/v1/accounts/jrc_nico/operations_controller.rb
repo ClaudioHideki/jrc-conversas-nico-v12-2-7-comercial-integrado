@@ -17,6 +17,7 @@ class Api::V1::Accounts::JrcNico::OperationsController < Api::V1::Accounts::Base
         %w[open pending].include?(c.status) && c.custom_attributes.dig('nico_assistance', 'message_id').to_i > answered.fetch(c.id, 0)
     end.first(8).map { |c| { conversation_id: c.display_id, name: c.contact.name, recommendation: c.custom_attributes['nico_assistance'] } }
     render json: { messages: @operator.session.messages,
+                   workflow: JrcNico::WorkflowSummary.for(@operator.session),
                    can_manage_knowledge: @operator.access.membership.administrator?,
                    commands: @operator.session.commands.where('created_at >= ?', @operator.session.context['visible_since'] || Time.current)
                                       .order(id: :desc).limit(100).map(&:snapshot),
@@ -52,8 +53,9 @@ class Api::V1::Accounts::JrcNico::OperationsController < Api::V1::Accounts::Base
   end
 
   def ask
-    input = params.permit(:message, :request_id, :conversation_id)
-    @operator.ask(message: input.fetch(:message), request_id: input.fetch(:request_id), conversation_id: input[:conversation_id])
+    input = params.permit(:message, :request_id, :conversation_id, :route_name)
+    @operator.ask(message: input.fetch(:message), request_id: input.fetch(:request_id), conversation_id: input[:conversation_id],
+                  route_name: input[:route_name])
     show
   end
 

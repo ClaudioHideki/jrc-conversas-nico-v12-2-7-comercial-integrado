@@ -3,6 +3,12 @@ module JrcCopilot
     DEFAULT_ROUTE = 'jrc_cockpit'.freeze
 
     ROUTE_GUIDES = {
+      'automation_list' => {
+        title: 'Automações Inteligentes',
+        summary: 'Regras de atendimento: escolha um evento, condições e ações. A delegação temporária ao NICO não cria uma regra recorrente. Configure e acompanhe as regras nesta tela.',
+        quick_prompts: ['Explique as automações desta tela', 'Como configurar uma regra de atendimento?'],
+        actions: [{ label: 'Abrir Automações Inteligentes', route_name: 'automation_list', icon: 'i-lucide-workflow', tone: 'blue' }]
+      },
       'jrc_cockpit' => {
         title: 'Cockpit',
         summary: 'Centraliza a operacao, mostra o que esta acontecendo agora e direciona o usuario para a acao necessaria.',
