@@ -265,4 +265,17 @@ RSpec.describe 'NICO JSON execution boundary', type: :request do
     expect(command.reply).not_to include('Seu perfil não permite')
   end
 
+  it 'reuses an identical contact count instead of exhausting the read budget' do
+    create_list(:contact, 2, account: account)
+    allow(JrcNico::OperationalInference).to receive(:call).and_return(
+      'reply' => '', 'tool' => 'count_contacts', 'arguments' => {}
+    )
+
+    command = operator.ask(message: 'Quantos contatos temos cadastrados?', request_id: SecureRandom.uuid)
+
+    expect(JrcNico::OperationalInference).to have_received(:call).twice
+    expect(command.reply).to eq("Há #{account.contacts.count} contatos cadastrados na conta.")
+    expect(command.reply).not_to include('limite de consultas', 'count_contacts:')
+  end
+
 end

@@ -274,6 +274,21 @@ class JrcNico::OperatorSession
         prepare(command, response['tool'], response['arguments'], response['reply'])
         return command
       end
+      previous_read = context[:tool_results].reverse.find do |item|
+        item[:result] && item[:tool] == response['tool'] && item[:arguments] == response['arguments']
+      end
+      if previous_read
+        if %w[count_contacts list_contacts list_conversations read_conversation].include?(response['tool'])
+          reply = readable_read_summary(response['tool'], previous_read[:result])
+          command.update!(status: 'succeeded', tool: response['tool'], arguments: response['arguments'],
+                          result: previous_read[:result].as_json, reply: reply)
+          session.with_lock { session.append('assistant', reply) }
+          return command
+        end
+        context[:tool_results] << { tool: response['tool'], arguments: response['arguments'],
+                                    error: 'Consulta idêntica já concluída. Use o resultado existente e prossiga sem repeti-la.' }
+        next
+      end
       result = JrcNico::ToolExecutor.new(access, customer_notice: notice).call(response['tool'], response['arguments'])
       command.update!(tool: response['tool'], arguments: response['arguments'], result: result.as_json)
       session.with_lock { remember_result(response['tool'], result) } unless notice
@@ -282,7 +297,7 @@ class JrcNico::OperatorSession
         session.with_lock { session.append('assistant', command.reply) }
         return command
       end
-      context[:tool_results] << { tool: response['tool'], result: result }
+      context[:tool_results] << { tool: response['tool'], arguments: response['arguments'], result: result }
       if response['tool'] == 'search_contacts' && result.size > 1
         session.with_lock { session.update!(context: session.context.merge('ambiguous_contact_ids' => result.map { |row| row['id'] })) }
         command.update!(status: 'succeeded', reply: contact_choices(result))
@@ -325,7 +340,7 @@ class JrcNico::OperatorSession
   end
 
   def bounded_read_summary(results)
-    successful = results.select { |item| item[:result] }
+    successful = results.select { |item| item[:result] }.uniq { |item| [item[:tool], item[:arguments]] }
     batches = successful.select { |item| item[:tool] == 'conversation_opportunity_batch' }.map { |item| item[:result] }
     if batches.any?
       rows = batches.flat_map { |batch| batch[:conversations] }.uniq { |row| row[:conversation_id] }
@@ -345,7 +360,35 @@ class JrcNico::OperatorSession
              "#{"Mais #{omitted} conversas foram lidas e não cabem nesta resposta. " if omitted.positive?}" \
              "#{batches.last[:scope]} #{continuation}"
     end
-    "O limite de consultas desta rodada foi atingido. Resultados reais: #{successful.map { |item| "#{item[:tool]}: #{item[:result].to_json}" }.join('; ').first(3500)}"
+    return 'O NICO não recebeu resultados de consulta para apresentar.' if successful.empty?
+
+    summaries = successful.map { |item| readable_read_summary(item[:tool], item[:result]) }.uniq
+    "Concluí as consultas possíveis nesta rodada. #{summaries.join(' ')}".first(4000)
+  end
+
+  def readable_read_summary(tool, result)
+    data = result.as_json
+    case tool
+    when 'count_contacts'
+      "Há #{data['count']} contatos cadastrados na conta."
+    when 'list_contacts'
+      rows = Array(data).map { |row| "##{row['id']} #{row['name']} (#{row['phone_number'].presence || row['email'].presence || 'sem telefone/email'})" }
+      "Contatos encontrados: #{rows.join('; ').presence || 'nenhum'}."
+    when 'list_conversations'
+      rows = Array(data).map { |row| "##{row['conversation_id']} #{row['contact_name']} — #{row['channel']} — #{row['status']}" }
+      "Conversas encontradas: #{rows.join('; ').presence || 'nenhuma'}."
+    when 'read_conversation'
+      "Conversa ##{data['conversation_id']} de #{data['contact_name']}, canal #{data['channel']}, status #{data['status']}; " \
+        "#{Array(data['messages']).size} mensagens públicas lidas."
+    when 'list_leads'
+      rows = Array(data).map { |row| "lead ##{row['id']} #{row['name']} (status #{row['status']}, contato ##{row['contact_id']})" }
+      "Leads encontrados: #{rows.join('; ').presence || 'nenhum'}."
+    when 'list_deals'
+      rows = Array(data).map { |row| "negócio ##{row['id']} #{row['title']} (status #{row['status']})" }
+      "Negócios encontrados: #{rows.join('; ').presence || 'nenhum'}."
+    else
+      "#{tool}: #{data.to_json.first(1200)}"
+    end
   end
 
   def continue_opportunity_read(message, context, response, final_read)
