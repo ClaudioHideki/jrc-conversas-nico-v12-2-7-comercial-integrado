@@ -236,4 +236,33 @@ RSpec.describe 'NICO JSON execution boundary', type: :request do
     expect(account.jrc_crm_leads.count).to eq(0)
   end
 
+  it 'forces a real opportunity read when the provider returns the generic no-op answer' do
+    conversation
+    create(:message, account: account, conversation: conversation, message_type: :incoming, content: 'Precisamos de dez ramais para a empresa')
+    allow(JrcNico::OperationalInference).to receive(:call).and_return(
+      'reply' => 'Consultei os dados disponíveis. Selecione o registro ou detalhe a próxima ação.', 'tool' => '', 'arguments' => {}
+    )
+
+    command = operator.ask(message: 'Analise todas as conversas e identifique oportunidades para gerar leads', request_id: SecureRandom.uuid)
+
+    expect(command.reply).to include("Conversa ##{conversation.display_id}", conversation.contact.name, 'dez ramais')
+    expect(command.reply).to include('nenhum lead foi criado sem confirmação')
+    expect(command.reply).not_to include('Consultei os dados disponíveis')
+    expect(account.jrc_crm_leads.count).to eq(0)
+  end
+
+  it 'replans a hallucinated unauthorized tool using the catalog instead of denying the operator' do
+    allow(JrcNico::OperationalInference).to receive(:call).and_return(
+      { 'reply' => '', 'tool' => 'delete_everything', 'arguments' => {} },
+      { 'reply' => '', 'tool' => 'count_contacts', 'arguments' => {} },
+      { 'reply' => 'A conta possui contatos cadastrados.', 'tool' => '', 'arguments' => {} }
+    )
+
+    command = operator.ask(message: 'Quantos contatos temos cadastrados?', request_id: SecureRandom.uuid)
+
+    expect(command.status).to eq('succeeded')
+    expect(command.reply).to eq('A conta possui contatos cadastrados.')
+    expect(command.reply).not_to include('Seu perfil não permite')
+  end
+
 end

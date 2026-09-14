@@ -76,7 +76,7 @@ class JrcNico::ToolExecutor
         leads = @access.crm? ? @access.crm_scope(JrcCrm::Lead).where(contact_id: conversation.contact_id).limit(20).pluck(:id) : []
         conversation_snapshot(conversation).merge(lead_ids: leads,
           messages: conversation.messages.where(private: false, message_type: [:incoming, :outgoing]).order(id: :desc).limit(5).reverse.map do |message|
-            { id: message.id, content: message.content.to_s.first(300), created_at: message.created_at }
+            { id: message.id, message_type: message.message_type, content: message.content.to_s.first(300), created_at: message.created_at }
           end)
       end }
   end

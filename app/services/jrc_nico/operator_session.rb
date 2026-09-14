@@ -244,9 +244,12 @@ class JrcNico::OperatorSession
       context[:finalize] = final_read
       response = JrcNico::OperationalInference.call(account: access.account, user: access.user, kind: 'operator', message: command.message,
         context: context, history: notice ? [] : session.messages.last(16).map { |m| m.slice('role', 'content') })
+      response = continue_opportunity_read(command.message, context, response, final_read)
       if response['tool'].blank?
-        command.update!(status: 'succeeded', tool: nil, arguments: {}, result: {}, reply: response['reply'])
-        session.with_lock { session.append('assistant', response['reply']) }
+        reply = response['reply']
+        reply = bounded_read_summary(context[:tool_results]) if generic_noop_reply?(reply) && opportunity_analysis_request?(command.message)
+        command.update!(status: 'succeeded', tool: nil, arguments: {}, result: {}, reply: reply)
+        session.with_lock { session.append('assistant', reply) }
         return command
       end
       break if final_read
@@ -254,10 +257,12 @@ class JrcNico::OperatorSession
       response['arguments'] = catalog.normalize_arguments(response['tool'], response['arguments'])
       begin
         definition = catalog.validate!(response['tool'], response['arguments'])
-      rescue ArgumentError => error
+      rescue ArgumentError, Pundit::NotAuthorizedError => error
         raise if attempt == 7
 
-        context[:tool_results] << { tool: response['tool'], error: error.message }
+        detail = error.is_a?(Pundit::NotAuthorizedError) ?
+          'Ferramenta indisponível para este perfil. Escolha outra ferramenta presente em context.tools.' : error.message
+        context[:tool_results] << { tool: response['tool'], error: detail }
         next
       end
       JrcNico::CustomerRequestScope.validate!(access, notice, response['arguments']) if notice
@@ -324,12 +329,45 @@ class JrcNico::OperatorSession
     batches = successful.select { |item| item[:tool] == 'conversation_opportunity_batch' }.map { |item| item[:result] }
     if batches.any?
       rows = batches.flat_map { |batch| batch[:conversations] }.uniq { |row| row[:conversation_id] }
-      ids = rows.map { |row| "##{row[:conversation_id]}" }.join(', ')
-      return "Foram lidas #{rows.size} conversas visíveis (#{ids}), até cinco mensagens públicas por conversa. " \
-             "#{batches.last[:scope]} O limite desta rodada foi atingido sem concluir a análise de oportunidades. " \
-             "Este lote realizou somente consultas. Próximo lote: #{batches.last[:next_page] || 'fim da amostra'}."
+      candidates = rows.first(20).map do |row|
+        customer_text = Array(row[:messages]).reverse.find { |message| message[:message_type].to_s == 'incoming' }&.dig(:content)
+        customer_text ||= Array(row[:messages]).last&.dig(:content)
+        leads = Array(row[:lead_ids])
+        "Conversa ##{row[:conversation_id]} — #{row[:contact_name]} — #{row[:channel]} — #{row[:status]}; " \
+          "leads existentes: #{leads.presence&.join(', ') || 'nenhum na consulta'}; " \
+          "contexto recente: #{customer_text.to_s.squish.first(180).presence || 'sem mensagem pública no lote'}."
+      end
+      omitted = rows.size - candidates.size
+      continuation = batches.last[:next_page] ? "Próximo lote disponível: página #{batches.last[:next_page]}." : 'Fim da amostra visível.'
+      return "Foram lidas #{rows.size} conversas visíveis, em todos os status, com até cinco mensagens públicas por conversa. " \
+             "Abaixo estão candidatos para revisão comercial. Esta análise realizou somente consultas; nenhum lead foi criado sem confirmação.\n" \
+             "#{candidates.join("\n")}\n" \
+             "#{"Mais #{omitted} conversas foram lidas e não cabem nesta resposta. " if omitted.positive?}" \
+             "#{batches.last[:scope]} #{continuation}"
     end
     "O limite de consultas desta rodada foi atingido. Resultados reais: #{successful.map { |item| "#{item[:tool]}: #{item[:result].to_json}" }.join('; ').first(3500)}"
+  end
+
+  def continue_opportunity_read(message, context, response, final_read)
+    return response unless opportunity_analysis_request?(message)
+    return response if response['tool'].present? || final_read
+
+    batches = context[:tool_results].select { |item| item[:tool] == 'conversation_opportunity_batch' && item[:result] }
+    page = batches.empty? ? 1 : batches.last.dig(:result, :next_page)
+    return response unless page
+    return response if context.to_json.bytesize > 65_000
+
+    { 'reply' => '', 'tool' => 'conversation_opportunity_batch', 'arguments' => { 'page' => page } }
+  end
+
+  def opportunity_analysis_request?(message)
+    normalized = message.to_s.unicode_normalize(:nfkd).encode('ASCII', invalid: :replace, undef: :replace, replace: '').downcase
+    normalized.match?(/(oportun|potencial).*(conversa|contato|lead)|(conversa|contato).*(oportun|potencial|gerar lead)/)
+  end
+
+  def generic_noop_reply?(reply)
+    normalized = reply.to_s.unicode_normalize(:nfkd).encode('ASCII', invalid: :replace, undef: :replace, replace: '').downcase
+    normalized.blank? || normalized.include?('consultei os dados disponiveis') || normalized.include?('selecione o registro')
   end
 
   def public_history(conversation)
