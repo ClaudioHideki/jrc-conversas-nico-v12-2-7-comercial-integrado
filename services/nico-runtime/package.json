@@ -3,17 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24 <25" },
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "node --test --test-concurrency=1 test/*.test.ts"
+    "test": "node --test --test-concurrency=1 test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit --noUnusedLocals --noUnusedParameters"
   },
   "dependencies": {
     "@elizaos/core": "1.7.2",
     "@elizaos/plugin-sql": "1.7.2"
   },
-  "devDependencies": { "typescript": "5.9.3", "@types/node": "24.10.0" },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "24.10.0"
+  },
   "overrides": {
     "pdfjs-dist": "6.2.108",
     "esbuild": "0.25.12"

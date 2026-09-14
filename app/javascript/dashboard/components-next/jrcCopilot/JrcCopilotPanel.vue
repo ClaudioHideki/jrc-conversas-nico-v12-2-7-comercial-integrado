@@ -205,7 +205,7 @@ const load = async () => {
   }
 };
 const perform = async (action, nextPhase = 'working') => {
-  if (busy.value) return;
+  if (busy.value) return undefined;
   const current = version;
   loadVersion += 1;
   abort?.abort();
@@ -214,21 +214,24 @@ const perform = async (action, nextPhase = 'working') => {
   error.value = '';
   try {
     const { data } = await action();
-    if (current !== version) return;
+    if (current !== version) return undefined;
     apply(data);
     if (visible.value) voice.speak(data.messages.at(-1)?.content);
     await nextTick();
     if (fullVisible.value) scrollToCurrent();
     return data;
-  } catch {
+  } catch (failure) {
     if (current === version) {
-      error.value = label('ACTION_ERROR');
+      const message = failure.response?.data?.message;
+      error.value =
+        typeof message === 'string' ? message : label('ACTION_ERROR');
       busy.value = false;
       await load();
     }
   } finally {
     if (current === version) busy.value = false;
   }
+  return undefined;
 };
 const ask = async prompt => {
   const message = String(prompt ?? input.value).trim();

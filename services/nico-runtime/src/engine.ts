@@ -7,32 +7,11 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { transcribeAudio } from './transcription.ts';
 import { validateOperation, validateOperationResult, operationPrompt, operationSchema, customerSchema, type OperationInput } from './operations.ts';
 
-type Usage = { input_tokens: number; output_tokens: number; total_tokens: number };
+import { structuredResponse, type Usage } from './provider.ts';
+import { NicoError } from './errors.ts';
+
 export type Result = Analysis & { usage: Usage | null; model: string; mode: string };
 type Config = { mode: 'fixture' | 'provider'; dataDir?: string; postgresUrl?: string; model?: string; apiKey?: string; baseUrl?: string };
-
-async function readJson(response: Response): Promise<any> {
-  if (!response.ok || !response.body) throw new Error(`Provider request failed HTTP ${response.status}`);
-  const reader = response.body.getReader();
-  const parts: Uint8Array[] = [];
-  let size = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      if (size > 131072) throw new Error('Provider response too large');
-      parts.push(value);
-    }
-    const text = Buffer.concat(parts).toString('utf8');
-    try {
-      return JSON.parse(text);
-    } catch {
-      const preview = text.replace(/\s+/g, ' ').slice(0, 300);
-      throw new Error(`Provider response invalid JSON: ${preview || '<empty>'}`);
-    }
-  } finally { await reader.cancel(); }
-}
 
 export async function createEngine(config: Config) {
   // core useModel traces whole prompts. This dedicated service never emits SDK logs,
@@ -74,10 +53,10 @@ export async function createEngine(config: Config) {
             usage: null, model: 'fixture-local', mode: 'fixture',
           };
         }
-        const response = await fetch(`${baseUrl.href.replace(/\/$/, '')}/chat/completions`, {
-          method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(45000), ...(signals.getStore() ? [signals.getStore()!] : [])]), redirect: 'error',
-          headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: config.model, temperature: 0, max_completion_tokens: 2000,
+        const generated = await structuredResponse({
+          url: `${baseUrl.href.replace(/\/$/, '')}/chat/completions`, apiKey: config.apiKey!,
+          signal: signals.getStore(), retryInvalid: operational,
+          body: { model: config.model, temperature: 0, max_completion_tokens: 2000,
             response_format: { type: 'json_schema', json_schema: {
               name: 'nico_assisted_analysis', strict: true,
               schema: operational ? (raw.kind === 'customer' ? customerSchema : operationSchema) : analysisSchema,
@@ -85,37 +64,14 @@ export async function createEngine(config: Config) {
             messages: [
               { role: 'system', content: operational ? operationPrompt(raw.kind) : agentPrompt((input as Input).agent_key) },
               { role: 'user', content: JSON.stringify(input) },
-              // Keep the current customer turn after the historical context, so an
-              // earlier question or the qualification objective cannot become the turn to answer.
               ...(operational && raw.kind === 'customer'
                 ? [{ role: 'user', content: (input as OperationInput).message }] : []),
             ],
-          }),
+          },
+          validate: value => operational ? validateOperationResult(value, raw.kind) : validateAnalysis(value, (input as Input).context),
         });
-        const body = await readJson(response);
-        let parsed;
-        const content = body.choices?.[0]?.message?.content;
-        try {
-          if (content && typeof content === 'object') {
-            parsed = content;
-          } else {
-            const text = String(content ?? '').trim();
-            const normalized = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-            parsed = JSON.parse(normalized);
-          }
-        } catch {
-          const contentType = content === null || content === undefined ? 'empty' : typeof content;
-          const contentLength = typeof content === 'string' ? content.length : 0;
-          const finishReason = body.choices?.[0]?.finish_reason ?? 'unknown';
-          throw new Error(`Provider output not valid JSON (type=${contentType}, length=${contentLength}, finish_reason=${finishReason})`);
-        }
-        const analysis = operational ? validateOperationResult(parsed, raw.kind) : validateAnalysis(parsed, (input as Input).context);
-        const usage = body.usage;
-        if (!usage || ![usage.prompt_tokens, usage.completion_tokens, usage.total_tokens].every(n => Number.isSafeInteger(n) && n >= 0 && n <= 270000)
-          || usage.prompt_tokens + usage.completion_tokens !== usage.total_tokens) {
-          throw new Error('Provider usage unavailable');
-        }
-        return { ...analysis, usage: { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens, total_tokens: usage.total_tokens }, model: config.model, mode: 'provider' };
+        return { ...generated.result, usage: generated.usage,
+          ...(generated.usageEstimated ? { usage_estimated: true } : {}), model: config.model, mode: 'provider' };
       },
     },
   };
@@ -125,7 +81,7 @@ export async function createEngine(config: Config) {
   let active = 0;
   const concurrency = Math.max(1, Math.min(8, Number(process.env.NICO_MAX_CONCURRENCY || 3)));
   async function invoke(input: Input | OperationInput, signal?: AbortSignal) {
-    if (active >= concurrency) throw new Error('Runtime busy');
+    if (active >= concurrency) throw new NicoError('runtime_busy');
     active += 1;
     try {
       signal?.throwIfAborted();
@@ -146,7 +102,7 @@ export async function createEngine(config: Config) {
       return await invoke(input, signal);
     },
     async transcribe(input: unknown, signal?: AbortSignal) {
-      if (active >= concurrency) throw new Error('Runtime busy');
+      if (active >= concurrency) throw new NicoError('runtime_busy');
       active += 1;
       try { return await transcribeAudio(input, config, signal); }
       finally { active -= 1; }

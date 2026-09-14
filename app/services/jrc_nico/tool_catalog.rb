@@ -7,6 +7,7 @@ class JrcNico::ToolCatalog
     'create_contact' => ['Cadastrar contato; informe telefone internacional ou email', 'contacts', true, %w[name* phone_number email]],
     'update_contact' => ['Atualizar dados de um contato identificado', 'contacts', true, %w[contact_id* name phone_number email]],
     'list_conversations' => ['Listar até 20 conversas visíveis recentes; filtrar por nome e status', 'conversations', false, %w[query status]],
+    'conversation_opportunity_batch' => ['Ler lote de 10 conversas visíveis com evidências públicas para analisar oportunidades; todos os status por padrão, page inicia em 1', 'conversations', false, %w[page status]],
     'read_conversation' => ['Ler mensagens públicas e metadados da conversa', 'conversations', false, %w[conversation_id*]],
     'send_message' => ['Enviar mensagem ao cliente pelo canal da conversa; private=true cria nota interna', 'conversations', true, %w[conversation_id* content* private]],
     'update_conversation' => ['Alterar status (open/resolved/pending/snoozed), prioridade, responsável, equipe ou etiquetas', 'conversations', true,
@@ -95,6 +96,7 @@ class JrcNico::ToolCatalog
               when 'labels' then value.is_a?(Array) && value.length <= 20 && value.all? { |label| label.is_a?(String) && label.length <= 100 }
               when 'allowed_actions' then value.is_a?(Array) && value.length <= 5 && (value - JrcNico::DelegatedActions::GROUPS.keys).empty?
               when 'allow_crm', 'private', 'active', 'greeting_enabled' then [true, false].include?(value)
+              when 'page' then value.is_a?(Integer) && value.between?(1, 20)
               when /_id$/, 'hours' then value.is_a?(Integer) && value.positive?
               when /_cents$/ then value.is_a?(Integer) && value >= 0
               when 'quantity' then value.is_a?(Numeric) && value.positive? && value <= 1_000_000

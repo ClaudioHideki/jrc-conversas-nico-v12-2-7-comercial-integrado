@@ -206,7 +206,7 @@ class JrcNico::OperatorSession
       session.with_lock { session.update!(context: session.context.merge('conversation_ids' => (Array(session.context['conversation_ids']) + [selected.display_id]).uniq)) }
     end
     context = {
-      tools: catalog.available, modules: JrcCopilot::TaskCatalog::ROUTE_GUIDES.transform_values { |v| v[:title] },
+      operator_id: access.user.id, tools: catalog.available, modules: JrcCopilot::TaskCatalog::ROUTE_GUIDES.transform_values { |v| v[:title] },
       last_result: session.context['last_result'], timezone: access.account.reporting_timezone,
       today: Time.current.in_time_zone(access.account.reporting_timezone.presence || 'UTC').iso8601,
       selected_conversation: selected && {
@@ -237,7 +237,11 @@ class JrcNico::OperatorSession
         conversation: context[:conversation], completed_steps: context[:completed_steps]
       }
     end
-    4.times do |attempt|
+    8.times do |attempt|
+      # Keep a final model turn for synthesis, within transport and token reservations.
+      final_read = attempt == 7 || context.to_json.bytesize > 80_000
+      context[:tools] = [] if final_read
+      context[:finalize] = final_read
       response = JrcNico::OperationalInference.call(account: access.account, user: access.user, kind: 'operator', message: command.message,
         context: context, history: notice ? [] : session.messages.last(16).map { |m| m.slice('role', 'content') })
       if response['tool'].blank?
@@ -245,11 +249,13 @@ class JrcNico::OperatorSession
         session.with_lock { session.append('assistant', response['reply']) }
         return command
       end
+      break if final_read
+
       response['arguments'] = catalog.normalize_arguments(response['tool'], response['arguments'])
       begin
         definition = catalog.validate!(response['tool'], response['arguments'])
       rescue ArgumentError => error
-        raise if attempt == 3
+        raise if attempt == 7
 
         context[:tool_results] << { tool: response['tool'], error: error.message }
         next
@@ -272,9 +278,58 @@ class JrcNico::OperatorSession
         return command
       end
       context[:tool_results] << { tool: response['tool'], result: result }
+      if response['tool'] == 'search_contacts' && result.size > 1
+        session.with_lock { session.update!(context: session.context.merge('ambiguous_contact_ids' => result.map { |row| row['id'] })) }
+        command.update!(status: 'succeeded', reply: contact_choices(result))
+        session.with_lock { session.append('assistant', command.reply) }
+        return command
+      end
     end
-    command.update!(status: 'succeeded', reply: 'Consultei os dados disponíveis. Selecione o registro ou detalhe a próxima ação.')
+    command.update!(status: 'succeeded', reply: bounded_read_summary(context[:tool_results]))
     session.with_lock { session.append('assistant', command.reply) }
+  end
+
+  def contact_choices(rows)
+    options = rows.map do |row|
+      channels = Array(row[:conversations] || row['conversations']).map { |conversation| "#{conversation[:channel] || conversation['channel']} ##{conversation[:conversation_id] || conversation['conversation_id']}" }
+      "Contato ##{row['id']}: #{row['name']}; telefone #{row['phone_number'].presence || 'não cadastrado'}; " \
+        "email #{row['email'].presence || 'não cadastrado'}; conversas visíveis: #{channels.join(', ').presence || 'nenhuma na amostra'}."
+    end
+    "Encontrei mais de um contato. Informe o contato #ID ou selecione uma conversa para definir o destinatário.\n#{options.join("\n")}"
+  end
+
+  def require_recipient_choice!(command, name, arguments)
+    candidates = Array(session.context['ambiguous_contact_ids'])
+    return if candidates.empty? || command.source_notice
+
+    target_ids = [arguments['contact_id']].compact
+    ids = Array(arguments['conversation_ids']) + [arguments['conversation_id']].compact
+    target_ids += ids.map { |id| access.conversation(id).contact_id }
+    { 'lead_id' => JrcCrm::Lead, 'deal_id' => JrcCrm::Deal }.each do |field, model|
+      target_ids << access.crm_scope(model).find(arguments[field]).contact_id if arguments[field]
+    end
+    return if (target_ids & candidates).empty? && name != 'create_contact'
+
+    selected = candidates.select { |id| command.message.match?(/(?:contato|ID)\s*#?#{id}\b/i) }
+    if command.execution_context['conversation_id']
+      selected << access.conversation(command.execution_context['conversation_id']).contact_id
+    end
+    if selected.uniq.size != 1 || target_ids.empty? || target_ids.any? { |id| id != selected.first }
+      raise ArgumentError, 'Há contatos ambíguos. Informe o contato #ID ou selecione a conversa antes de preparar esta ação.'
+    end
+  end
+
+  def bounded_read_summary(results)
+    successful = results.select { |item| item[:result] }
+    batches = successful.select { |item| item[:tool] == 'conversation_opportunity_batch' }.map { |item| item[:result] }
+    if batches.any?
+      rows = batches.flat_map { |batch| batch[:conversations] }.uniq { |row| row[:conversation_id] }
+      ids = rows.map { |row| "##{row[:conversation_id]}" }.join(', ')
+      return "Foram lidas #{rows.size} conversas visíveis (#{ids}), até cinco mensagens públicas por conversa. " \
+             "#{batches.last[:scope]} O limite desta rodada foi atingido sem concluir a análise de oportunidades. " \
+             "Este lote realizou somente consultas. Próximo lote: #{batches.last[:next_page] || 'fim da amostra'}."
+    end
+    "O limite de consultas desta rodada foi atingido. Resultados reais: #{successful.map { |item| "#{item[:tool]}: #{item[:result].to_json}" }.join('; ').first(3500)}"
   end
 
   def public_history(conversation)
@@ -287,14 +342,16 @@ class JrcNico::OperatorSession
     definition = JrcNico::ToolCatalog.new(access).validate!(name, arguments)
     raise ArgumentError, 'Esta ferramenta é de consulta.' unless definition[:confirmation]
 
+    require_recipient_choice!(command, name, arguments)
     command.update!(tool: name, arguments: arguments, status: 'awaiting_confirmation', reply: reply.presence || definition[:description])
     session.with_lock { session.append('assistant', "Prévia: #{command.reply}") }
   end
 
   def remember_result(tool, result)
     data = result.as_json
-    rows = data.is_a?(Array) ? data : [data]
-    ids = rows.filter_map { |row| row['conversation_id'] if row.is_a?(Hash) }
+    rows = data.is_a?(Array) ? data : data['conversations'] || [data]
+    nested = rows.flat_map { |row| row.is_a?(Hash) ? Array(row['conversations']) : [] }
+    ids = (rows + nested).filter_map { |row| row['conversation_id'] if row.is_a?(Hash) }
     types = { 'search_contacts' => 'Contact', 'list_contacts' => 'Contact', 'list_leads' => 'JrcCrm::Lead', 'list_deals' => 'JrcCrm::Deal',
               'list_activities' => 'JrcCrm::Activity', 'list_proposals' => 'JrcCrm::Proposal' }
     resources = rows.filter_map do |row|
@@ -316,6 +373,11 @@ class JrcNico::OperatorSession
              when ArgumentError then error.message
              when Pundit::NotAuthorizedError then 'Seu perfil não permite esta ação ou o acesso ao recurso mudou.'
              when ActiveRecord::RecordNotFound then 'Registro não encontrado no seu escopo. Busque novamente.'
+             when JrcNico::RuntimeClient::Error
+               workflow = command.execution_context['workflow_id']
+               previous_changes = workflow && session.commands.where("execution_context ->> 'workflow_id' = ?", workflow)
+                 .where(status: 'succeeded', tool: JrcNico::ToolCatalog::TOOLS.select { |_name, definition| definition[2] }.keys).exists?
+               error.user_message(previous_changes: previous_changes)
              when JrcNico::RunCapacity::Exceeded then 'Limite de uso ou capacidade atingido. Aguarde ou revise os limites da conta.'
              else 'Não foi possível concluir. Verifique o estado do recurso antes de tentar novamente.'
              end

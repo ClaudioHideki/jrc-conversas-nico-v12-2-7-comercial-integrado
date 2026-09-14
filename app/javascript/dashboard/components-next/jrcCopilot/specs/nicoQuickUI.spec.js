@@ -66,7 +66,7 @@ describe('Quick NICO and Full Copilot use one operator session', () => {
     });
     route = reactive({ params: { accountId: '1', conversation_id: '14' } });
     calls = reactive({ hasActiveCall: false, hasIncomingCall: false });
-    sip = { hasCall: ref(false) };
+    sip = { hasCall: ref(false), registered: ref(true) };
     currentChat = ref({ id: 14, meta: { sender: { name: 'Marina' } } });
     snapshot = {
       messages: [],
@@ -182,6 +182,24 @@ describe('Quick NICO and Full Copilot use one operator session', () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     document.body.innerHTML = '';
+  });
+
+  it('shows the safe server error in Quick and Full without executing a tool', async () => {
+    const message =
+      'O NICO não conseguiu interpretar os dados. Nenhuma alteração foi realizada.';
+    api.ask.mockRejectedValueOnce({
+      response: { data: { error: 'tool_arguments_invalid', message } },
+    });
+    ui.openQuick();
+    await flushPromises();
+    await wrapper.get('textarea').setValue('Crie um contato');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+    expect(wrapper.text()).toContain(message);
+    expect(api.command).not.toHaveBeenCalled();
+    await wrapper.get('[aria-label="Abrir Full Copilot"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain(message);
   });
 
   it('opens Quick from the mascot without asking or executing on hover', async () => {

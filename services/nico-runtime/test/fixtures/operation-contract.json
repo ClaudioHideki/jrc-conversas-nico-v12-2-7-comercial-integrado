@@ -1,0 +1,10 @@
+{
+  "request_id": "a56905c4-9a03-4c21-a886-b5d18a3e4c57",
+  "account_id": 1,
+  "reply": "Contato pronto para revisão.",
+  "tool": "create_contact",
+  "arguments": "{\"name\":\"Telmo Miranda\",\"phone_number\":\"+5511991234567\"}",
+  "usage": { "input_tokens": 20, "output_tokens": 10, "total_tokens": 30 },
+  "model": "test-model",
+  "mode": "provider"
+}

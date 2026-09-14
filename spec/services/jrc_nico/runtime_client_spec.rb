@@ -32,4 +32,63 @@ RSpec.describe JrcNico::RuntimeClient do
       expect(described_class.new.analyze(run, context)).to include('mode' => 'fixture', 'usage' => nil)
     end
   end
+  describe 'operation wire contract' do
+    let(:wire) { JSON.parse(Rails.root.join('services/nico-runtime/test/fixtures/operation-contract.json').read) }
+    let(:payload) { { request_id: wire['request_id'], account_id: wire['account_id'], kind: 'operator', message: 'Criar Telmo', context: {}, history: [] } }
+
+    around do |example|
+      with_modified_env NICO_RUNTIME_URL: 'http://runtime:3108', NICO_SERVICE_TOKEN: 'PRIVATE_SERVICE_TOKEN_TEST_12345678' do
+        example.run
+      end
+    end
+
+    it 'accepts the same fixture validated by TypeScript, including aggregated usage' do
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 200, body: wire.to_json)
+      result = described_class.new.operate(payload)
+      expect(result['arguments']).to eq('name' => 'Telmo Miranda', 'phone_number' => '+5511991234567')
+      expect(result['usage']['total_tokens']).to eq(30)
+    end
+
+    it 'preserves the explicit estimated-usage marker and rejects invalid markers' do
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 200, body: wire.merge('usage_estimated' => true).to_json)
+      expect(described_class.new.operate(payload)['usage_estimated']).to be(true)
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 200, body: wire.merge('usage_estimated' => 'true').to_json)
+      expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.code).to eq('invalid_response') }
+    end
+
+    it 'rejects malformed, oversized, deeply nested, primitive and array arguments' do
+      ['{', 'null', '[]', '42', '"text"', { x: 'á' * 6000 }.to_json, '{"x":' * 9 + '0' + '}' * 9,
+       '{"id":9007199254740993}'].each do |arguments|
+        stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 200, body: wire.merge('arguments' => arguments).to_json)
+        expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.class.name).to eq('JrcNico::RuntimeClient::Error') }
+      end
+    end
+
+    %w[provider_outer_json_invalid tool_arguments_invalid provider_schema_invalid provider_timeout provider_unauthorized
+       provider_forbidden provider_rate_limited provider_unavailable runtime_busy account_not_configured unauthorized].each do |code|
+      it "preserves #{code} without repeating the Rails request" do
+        stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 502, body: { error: code }.to_json)
+        expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.code).to eq(code) }
+        expect(WebMock).to have_requested(:post, 'http://runtime:3108/v1/operate').once
+      end
+    end
+
+    it 'distinguishes a Rails transport timeout from a provider timeout' do
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_timeout
+      expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.code).to eq('runtime_timeout') }
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_raise(Errno::ECONNREFUSED)
+      expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.code).to eq('runtime_transport_error') }
+    end
+
+    it 'never logs credentials or untrusted error bodies' do
+      lines = []
+      allow(Rails.logger).to receive(:warn) { |line| lines << line }
+      secret = 'Authorization PRIVATE_SERVICE_TOKEN_TEST_12345678 PRIVATE_OPENAI_KEY PRIVATE_CONVERSATION'
+      stub_request(:post, 'http://runtime:3108/v1/operate').to_return(status: 502, body: { error: secret }.to_json)
+      expect { described_class.new.operate(payload) }.to raise_error { |error| expect(error.code).to eq('runtime_transport_error') }
+      expect(lines.join).to include('code=runtime_transport_error')
+      expect(lines.join).not_to include('Authorization', 'PRIVATE_SERVICE_TOKEN', 'PRIVATE_OPENAI_KEY', 'PRIVATE_CONVERSATION')
+    end
+  end
+
 end

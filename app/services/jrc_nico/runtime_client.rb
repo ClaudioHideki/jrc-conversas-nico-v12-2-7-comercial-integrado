@@ -1,7 +1,35 @@
 require 'net/http'
 
 class JrcNico::RuntimeClient
-  class Error < StandardError; end
+  class Error < StandardError
+    CODES = %w[provider_outer_json_invalid tool_arguments_invalid provider_schema_invalid provider_timeout provider_unauthorized
+               provider_forbidden provider_rate_limited provider_unavailable provider_transport_error provider_usage_invalid
+               runtime_busy request_cancelled runtime_internal_error unauthorized account_not_configured runtime_transport_error
+               runtime_timeout invalid_response invalid_scope invalid_configuration context_too_large invalid_transcription].freeze
+    attr_reader :code
+
+    def initialize(code = 'invalid_response')
+      @code = CODES.include?(code) ? code : 'invalid_response'
+      super(@code)
+    end
+
+    def user_message(previous_changes: false)
+      case code
+      when 'provider_outer_json_invalid', 'tool_arguments_invalid', 'provider_schema_invalid', 'invalid_response'
+        unchanged = previous_changes ? 'As etapas já concluídas foram preservadas; esta etapa não realizou alterações.' : 'Nenhuma alteração foi realizada.'
+        "O NICO não conseguiu interpretar os dados necessários para executar esta ação. #{unchanged} Tente novamente ou revise os dados informados."
+      when 'provider_rate_limited' then 'O provedor de IA atingiu o limite de solicitações ou de uso. Aguarde e verifique a cota do provedor.'
+      when 'provider_timeout' then 'O provedor de IA demorou além do limite. A etapa não foi executada. Tente novamente.'
+      when 'provider_unauthorized', 'provider_forbidden' then 'O provedor de IA recusou o acesso. Solicite a revisão da configuração ao administrador.'
+      when 'runtime_busy' then 'O NICO está ocupado com outras solicitações. Aguarde e tente novamente.'
+      when 'account_not_configured' then 'Esta conta não está autorizada no runtime do NICO. Solicite a revisão ao administrador.'
+      when 'unauthorized' then 'A autenticação entre o JRC e o runtime do NICO foi recusada. Solicite a revisão ao administrador.'
+      when 'runtime_transport_error', 'runtime_timeout' then 'O JRC não conseguiu se comunicar com o runtime do NICO. Tente novamente quando o serviço estiver disponível.'
+      when 'request_cancelled' then 'A solicitação do NICO foi cancelada antes da execução desta etapa.'
+      else 'O serviço de IA está indisponível. Esta etapa não foi executada. Aguarde e tente novamente.'
+      end
+    end
+  end
 
   KEYS = %w[request_id account_id summary suggested_reply evidence warnings usage model mode].freeze
 
@@ -17,6 +45,9 @@ class JrcNico::RuntimeClient
 
   def operate(payload)
     body = transport('/v1/operate', payload.to_json)
+    estimated = body.is_a?(Hash) && body.delete('usage_estimated')
+    raise Error, 'invalid_response' unless estimated.nil? || estimated == true
+
     fields = payload[:kind] == 'customer' ? %w[reply summary handoff create_lead operator_request] : %w[reply tool arguments]
     raise Error, 'invalid_response' unless body.is_a?(Hash) && body.keys.sort == (fields + %w[request_id account_id usage model mode]).sort
     raise Error, 'invalid_scope' unless body['account_id'] == payload[:account_id] && body['request_id'] == payload[:request_id]
@@ -26,16 +57,19 @@ class JrcNico::RuntimeClient
       raise Error, 'invalid_response' unless text?(body['summary'], 8000) && text?(body['operator_request'], 2000) && [true, false].include?(body['handoff']) &&
                                               [true, false].include?(body['create_lead'])
     else
-      raise Error, 'invalid_response' unless text?(body['tool'], 80) && text?(body['arguments'], 12_000)
+      raise Error, 'invalid_response' unless text?(body['tool'], 80) && text?(body['arguments'], 12_000) && body['arguments'].bytesize <= 12_000
 
-      body['arguments'] = JSON.parse(body['arguments'])
-      raise Error, 'invalid_response' unless body['arguments'].is_a?(Hash)
+      begin
+        body['arguments'] = JSON.parse(body['arguments'], max_nesting: 8)
+      rescue JSON::ParserError
+        raise Error, 'tool_arguments_invalid'
+      end
+      raise Error, 'tool_arguments_invalid' unless body['arguments'].is_a?(Hash) && bounded_arguments?(body['arguments'])
     end
+    body['usage_estimated'] = true if estimated
     body
-  rescue JSON::ParserError
-    raise Error, 'invalid_response'
   rescue Error => e
-    Rails.logger.warn("NICO operation failed request_id=#{payload[:request_id]} code=#{e.message}")
+    Rails.logger.warn("NICO operation failed request_id=#{payload[:request_id]} code=#{e.code}")
     raise
   end
 
@@ -56,9 +90,10 @@ class JrcNico::RuntimeClient
     request = Net::HTTP::Post.new(path, { 'Authorization' => "Bearer #{token}", 'Content-Type' => 'application/json' })
     request.body = payload
     body = +''
+    status = nil
     Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 3, read_timeout: 55, write_timeout: 10) do |http|
       http.request(request) do |response|
-        raise Error, "runtime_http_#{response.code}" unless response.code == '200'
+        status = response.code
 
         response.read_body do |chunk|
           body << chunk
@@ -66,9 +101,20 @@ class JrcNico::RuntimeClient
         end
       end
     end
-    JSON.parse(body)
-  rescue KeyError, URI::InvalidURIError, JSON::ParserError, IOError, SystemCallError, Timeout::Error => e
-    raise Error, e.class.name
+    parsed = JSON.parse(body)
+    unless status == '200'
+      code = parsed.is_a?(Hash) && parsed['error']
+      raise Error, code.is_a?(String) && Error::CODES.include?(code) ? code : 'runtime_transport_error'
+    end
+    parsed
+  rescue KeyError, URI::InvalidURIError
+    raise Error, 'invalid_configuration'
+  rescue JSON::ParserError
+    raise Error, 'invalid_response'
+  rescue Timeout::Error
+    raise Error, 'runtime_timeout'
+  rescue IOError, SystemCallError, SocketError, OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::ProtocolError
+    raise Error, 'runtime_transport_error'
   end
 
   private
@@ -86,6 +132,16 @@ class JrcNico::RuntimeClient
     raise Error, 'invalid_response' unless valid
 
     body
+  end
+
+  def bounded_arguments?(value, depth = 1)
+    return false if depth > 8
+    return value.values.all? { |child| bounded_arguments?(child, depth + 1) } if value.is_a?(Hash)
+    return value.all? { |child| bounded_arguments?(child, depth + 1) } if value.is_a?(Array)
+    return value.abs <= 9_007_199_254_740_991 if value.is_a?(Integer)
+    return value.finite? if value.is_a?(Float)
+
+    true
   end
 
   def text?(value, max, required: false)

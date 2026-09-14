@@ -1,8 +1,9 @@
 class JrcNico::OperationalInference
   def self.call(account:, user:, kind:, message:, context:, history: [])
     payload = { request_id: SecureRandom.uuid, account_id: account.id, kind: kind, message: message, context: context, history: history }
-    # UTF-8 bytes bound text tokens; allowance covers system prompt, schema, framing and 2,000 output tokens.
-    reservation = payload.to_json.bytesize + 12_000
+    # Reserve both provider attempts, including prompts, framing and up to 2,000 output tokens each.
+    reservation = 2 * (payload.to_json.bytesize + 16_000)
+    raise JrcNico::RuntimeClient::Error, 'context_too_large' if reservation > 270_000
     metered(account: account, user: user, kind: kind, reservation_tokens: reservation) do
       JrcNico::RuntimeClient.new.operate(payload)
     end
@@ -33,7 +34,7 @@ class JrcNico::OperationalInference
       if result['mode'] == 'provider'
         JrcAi::UsageEvent.create!(account: account, user: user, agent_key: 'nico', feature: "nico_#{kind}",
                                  model: result.fetch('model'), **result.fetch('usage').symbolize_keys,
-                                 metadata: { inference_id: inference.id })
+                                 metadata: { inference_id: inference.id, usage_estimated: result['usage_estimated'] == true })
       end
       inference.update!(status: 'completed', reserved_tokens: 0)
     end

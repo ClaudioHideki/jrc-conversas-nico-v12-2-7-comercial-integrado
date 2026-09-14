@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
+import { errorResponse } from './errors.ts';
 import { createEngine } from './engine.ts';
 import { validateInput } from './contract.ts';
 import { validateOperation } from './operations.ts';
@@ -19,10 +20,14 @@ const server = createServer(async (req, res) => {
   const cancellation = new AbortController();
   res.on('close', () => { if (!res.writableEnded) cancellation.abort(); });
   const send = (status: number, body: unknown) => { if (res.destroyed || res.writableEnded) return; res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
+  const reject = (status: number, code: string) => {
+    console.error(JSON.stringify({ event: 'nico_request_failed', code }));
+    return send(status, { error: code });
+  };
   if (req.url === '/health' && req.method === 'GET') return send(200, { ready: true, mode, provider_verified: false });
   const received = Buffer.from(req.headers.authorization || '');
   const expected = Buffer.from(`Bearer ${token}`);
-  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return send(401, { error: 'unauthorized' });
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return reject(401, 'unauthorized');
   if (!['/v1/analyze', '/v1/operate', '/v1/transcribe'].includes(req.url || '') || req.method !== 'POST') return send(404, { error: 'not_found' });
   if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'json_required' });
   try {
@@ -36,15 +41,14 @@ const server = createServer(async (req, res) => {
     let input;
     try { input = (req.url === '/v1/transcribe' ? validateAudio : req.url === '/v1/operate' ? validateOperation : validateInput)(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
     catch { return send(422, { error: 'invalid_input' }); }
-    if (!accounts.has(String(input.account_id))) return send(403, { error: 'account_not_configured' });
+    if (!accounts.has(String(input.account_id))) return reject(403, 'account_not_configured');
     const result = req.url === '/v1/transcribe' ? await engine.transcribe(JSON.parse(Buffer.concat(chunks).toString('utf8')), cancellation.signal)
       : req.url === '/v1/operate' ? await engine.operate(input as any, cancellation.signal) : await engine.analyze(input as any, cancellation.signal);
     send(200, { ...result, request_id: input.request_id, account_id: input.account_id });
   } catch (error) {
-    const known = error instanceof Error && /^(Runtime busy|Provider request failed HTTP [0-9]{3}|Provider usage unavailable|Provider output not JSON|Invalid (scope|operation|message|history|context|reply|customer result|tool result|result))$/.test(error.message);
-    console.error(JSON.stringify({ event: 'nico_request_failed', route: req.url, code: known ? (error as Error).message : 'transport_or_response_error',
-      type: error instanceof Error ? error.name : 'Unknown', location: error instanceof Error ? error.stack?.split('\n')[1]?.trim() : undefined }));
-    send(error instanceof Error && error.message === 'Runtime busy' ? 429 : 502, { error: 'analysis_unavailable' });
+    const failure = errorResponse(error, req.url || '');
+    console.error(JSON.stringify(failure.log));
+    send(failure.status, failure.body);
   }
 });
 server.requestTimeout = 10000;

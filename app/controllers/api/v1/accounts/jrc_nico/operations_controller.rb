@@ -107,8 +107,8 @@ class Api::V1::Accounts::JrcNico::OperationsController < Api::V1::Accounts::Base
     invalid
   rescue JrcNico::OperatorSession::Busy, JrcNico::RunCapacity::Exceeded
     busy
-  rescue JrcNico::RuntimeClient::Error
-    unavailable
+  rescue JrcNico::RuntimeClient::Error => error
+    unavailable(error)
   end
 
   def operator_session
@@ -131,7 +131,7 @@ class Api::V1::Accounts::JrcNico::OperationsController < Api::V1::Accounts::Base
     render json: { error: 'capacity_unavailable' }, status: :too_many_requests
   end
 
-  def unavailable
-    render json: { error: 'provider_unavailable' }, status: :service_unavailable
+  def unavailable(error)
+    render json: { error: error.code, message: error.user_message }, status: :service_unavailable
   end
 end

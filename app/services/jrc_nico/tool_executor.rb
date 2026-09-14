@@ -20,14 +20,14 @@ class JrcNico::ToolExecutor
     scope = @account.contacts
     scope = scope.where(id: @customer_conversation.contact_id) if @customer_conversation
     scope.where('name ILIKE :q OR email ILIKE :q OR phone_number ILIKE :q', q: query).limit(20)
-            .select { |c| @access.policy(c).show? }.map { |c| c.slice(:id, :name, :email, :phone_number) }
+            .select { |c| @access.policy(c).show? }.map { |c| contact_snapshot(c) }
   end
 
   def list_contacts
     scope = @account.contacts
     scope = scope.where(id: @customer_conversation.contact_id) if @customer_conversation
     scope.order(id: :desc).limit(20)
-         .select { |c| @access.policy(c).show? }.map { |c| c.slice(:id, :name, :email, :phone_number) }
+         .select { |c| @access.policy(c).show? }.map { |c| contact_snapshot(c) }
   end
 
   def count_contacts
@@ -62,6 +62,23 @@ class JrcNico::ToolExecutor
       (@args['status'].blank? || c.status == @args['status']) &&
         (@args['query'].blank? || c.contact.name.to_s.downcase.include?(@args['query'].downcase))
     end.first(20).map { |c| conversation_snapshot(c) }
+  end
+
+  def conversation_opportunity_batch
+    conversations = @customer_conversation ? [@customer_conversation] : @access.conversations
+    conversations = conversations.select { |record| record.status == @args['status'] } if @args['status'].present?
+    page = @args.fetch('page', 1)
+    batch = conversations.slice((page - 1) * 10, 10) || []
+    { scope: 'Amostra das 200 conversas recentes da conta, filtrada pelas permissões do operador; não representa todo o histórico.',
+      visible_in_sample: conversations.size, page: page, next_page: page * 10 < conversations.size ? page + 1 : nil,
+      statuses: @args['status'].presence || 'all', message_limit: 5,
+      conversations: batch.map do |conversation|
+        leads = @access.crm? ? @access.crm_scope(JrcCrm::Lead).where(contact_id: conversation.contact_id).limit(20).pluck(:id) : []
+        conversation_snapshot(conversation).merge(lead_ids: leads,
+          messages: conversation.messages.where(private: false, message_type: [:incoming, :outgoing]).order(id: :desc).limit(5).reverse.map do |message|
+            { id: message.id, content: message.content.to_s.first(300), created_at: message.created_at }
+          end)
+      end }
   end
 
   def read_conversation
@@ -146,7 +163,11 @@ class JrcNico::ToolExecutor
       attrs['name'] ||= contact&.name
       attrs['email'] ||= contact&.email
       attrs['phone'] ||= contact&.phone_number
-      lead = @account.jrc_crm_leads.create!(attrs.merge(contact: contact, owner: @user, source: 'nico'))
+      existing = contact && @access.crm_scope(JrcCrm::Lead).where(contact_id: contact.id).limit(21).to_a
+      if existing && existing.size > 1
+        raise ArgumentError, "Há vários leads para este contato. Selecione o ID: #{existing.map(&:id).join(', ')}."
+      end
+      lead = existing&.first || @account.jrc_crm_leads.create!(attrs.merge(contact: contact, owner: @user, source: 'nico'))
     end
     record_result(lead, 'Lead criado ou reutilizado', 'crm_leads')
   end
@@ -214,7 +235,7 @@ class JrcNico::ToolExecutor
     result = JrcCrm::ActivityDispatchService.new(activity: activity, actor: @user).call
     raise ArgumentError, result[:error].to_s unless result[:success]
 
-    record_result(activity, 'Atividade agendada; não envia mensagem nem inicia ligação', 'crm_activities')
+    record_result(activity, 'Atividade agendada; nenhum convite externo foi enviado', 'crm_activities')
   end
 
   def update_activity
@@ -355,9 +376,16 @@ class JrcNico::ToolExecutor
       'contact_id', 'lead_id', 'deal_id', 'due_at', 'total_cents'), route_name: route }
   end
 
+  def contact_snapshot(contact)
+    conversations = @account.conversations.where(contact_id: contact.id).order(updated_at: :desc).limit(20)
+                            .select { |record| @access.policy(record).show? }
+    contact.slice(:id, :name, :email, :phone_number).merge(conversations: conversations.map { |record| conversation_snapshot(record) })
+  end
+
   def conversation_snapshot(conversation)
     { conversation_id: conversation.display_id, contact_id: conversation.contact_id, contact_name: conversation.contact.name,
-      status: conversation.status, inbox_id: conversation.inbox_id, channel: conversation.inbox.channel_type }
+      phone_number: conversation.contact.phone_number, updated_at: conversation.updated_at, assignee_id: conversation.assignee_id,
+      inbox_name: conversation.inbox.name, status: conversation.status, inbox_id: conversation.inbox_id, channel: conversation.inbox.channel_type }
   end
 
   def parse_time(value)
