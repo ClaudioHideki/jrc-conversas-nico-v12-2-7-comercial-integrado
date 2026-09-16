@@ -1,6 +1,6 @@
 class JrcBrokerInboxBinding < ApplicationRecord
   belongs_to :account
-  belongs_to :inbox
+  belongs_to :inbox, touch: true
   has_many :grants, class_name: 'JrcBrokerInboxGrant', foreign_key: :inbox_id, primary_key: :inbox_id, dependent: :destroy, inverse_of: :binding
 
   validates :inbox_id, uniqueness: true

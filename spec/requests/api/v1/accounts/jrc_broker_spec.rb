@@ -180,4 +180,23 @@ RSpec.describe 'JRC Broker account control', type: :request do
     expect(response).to have_http_status(:forbidden)
     expect(stub).to have_been_requested.once
   end
+
+  it 'keeps an agent grant scoped to one inbox even when assigned to two inboxes' do
+    second = create(:channel_api, account: account).inbox
+    second_connection = SecureRandom.uuid
+    second_instance = SecureRandom.uuid
+    JrcBrokerInboxBinding.create!(account: account, inbox: second, integration_id: second_connection, instance_id: second_instance)
+    [inbox, second].each { |value| create(:inbox_member, inbox: value, user: agent) }
+    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    stub_request(:get, "#{remote}/connections/#{second_connection}/status")
+      .to_return(status: 200, body: health.merge(inboxId: second.id, integrationId: second_connection, instanceId: second_instance).to_json)
+    headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-second-inbox')
+    get "#{inbox_url}/status", headers: headers
+    expect(response.parsed_body['allowedActions']).to include('pair')
+    get "#{prefix}/inboxes/#{second.id}/status", headers: headers
+    expect(response.parsed_body['allowedActions']).to eq(['status'])
+    post "#{prefix}/inboxes/#{second.id}/pair", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(a_request(:post, "#{remote}/connections/#{second_connection}/pair")).not_to have_been_made
+  end
 end

@@ -119,3 +119,29 @@ Logs `.codex/j3-*.log`. Build Vite produção completo **PASS**, 5090 módulos,
 chunks grandes preexistentes. Build Rails/CI completo e inspeção de navegador
 pertencem ao gate J5, ainda pendente. Integração em Settings acompanha os metadados
 de vínculo e permissões de J4, para não inferir controle pelo nome do canal.
+
+## J4 — acesso pelo atendimento e concessões
+
+ConversationHeader usa o vínculo confirmado retornado pelo servidor e um botão que
+confere autorização antes de abrir o Dialog já existente. Troca de conversa/conta/
+inbox fecha o modal; logout limpa estado. O painel reutilizado não contém formulário
+de configuração nem edição de concessões. A aba JRC nas configurações da inbox contém
+o painel administrativo de grants, limitado aos membros atuais da própria inbox.
+
+Metadado `jrc_broker_bound` depende da flag global, da conta e de registro persistido;
+additional_attributes e nome não têm autoridade. Preload evita consulta adicional por
+inbox na listagem habilitada. Vínculo toca a inbox para atualizar cache. Webhook URL
+de Channel::Api passa a ser mostrado somente ao admin, assim como secret/hmac_token;
+a URL pode carregar segredo de callback e não é necessária ao agente. Consumo no
+frontend existente conferido: configurações administrativas; transporte preservado.
+
+RED Vue por componentes ausentes; GREEN **15 testes / 7 arquivos**. ESLint: zero
+erros, avisos de i18n dinâmico e formatação/preexistentes documentados nos logs.
+Primeiro RED Rails foi bloqueado por perda temporária do daemon Docker; isso não
+foi contado como falha funcional. Docker retornou, somente os três containers desta
+tarefa foram iniciados e RED real confirmou campo ausente. GREEN/regressão de APIs
+de inbox, Dashboard Apps e InboxPolicy: **132 exemplos, 0 falhas**. Após extrair a
+extensão para concern e normalizar quebras de linha dos arquivos tocados, RuboCop:
+**7 arquivos, aprovado**; regressão posterior com Inbox: **73 exemplos, 0 falhas**.
+Inclui agente associado a duas inboxes com concessão em somente uma. Logs `.codex/j4-*`.
+Não houve acesso a Chatwoot remoto ou telefone. Build integrado final segue em J5.

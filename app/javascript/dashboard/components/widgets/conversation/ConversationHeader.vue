@@ -9,6 +9,7 @@ import MoreActions from './MoreActions.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ConversationCallButton from './ConversationCallButton.vue';
+import ConnectionButton from 'dashboard/components-next/jrc-broker/ConnectionButton.vue';
 import wootConstants from 'dashboard/constants/globals';
 import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
@@ -175,6 +176,12 @@ const copyConversationId = async () => {
         class="hidden md:flex"
       />
       <ConversationCallButton :inbox="inbox" :chat="currentChat" />
+      <ConnectionButton
+        v-if="inbox?.jrc_broker_bound"
+        :key="`${accountId}:${inbox.id}:${chat.id}`"
+        :account-id="Number(accountId)"
+        :inbox="inbox"
+      />
       <MoreActions :conversation-id="currentChat.id" />
     </div>
   </div>

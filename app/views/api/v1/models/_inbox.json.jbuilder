@@ -3,6 +3,7 @@ json.avatar_url resource.try(:avatar_url)
 json.channel_id resource.channel_id
 json.name resource.name
 json.channel_type resource.channel_type
+json.jrc_broker_bound resource.jrc_broker_bound?
 json.greeting_enabled resource.greeting_enabled
 json.greeting_message resource.greeting_message
 json.working_hours_enabled resource.working_hours_enabled
@@ -120,7 +121,8 @@ end
 if resource.api?
   json.hmac_token resource.channel.try(:hmac_token) if Current.account_user&.administrator?
   json.secret resource.channel.try(:secret) if Current.account_user&.administrator?
-  json.webhook_url resource.channel.try(:webhook_url)
+  # Callback URLs can contain bearer secrets. Only account admins configure them.
+  json.webhook_url resource.channel.try(:webhook_url) if Current.account_user&.administrator?
   json.inbox_identifier resource.channel.try(:identifier)
   json.additional_attributes resource.channel.try(:additional_attributes)
 end

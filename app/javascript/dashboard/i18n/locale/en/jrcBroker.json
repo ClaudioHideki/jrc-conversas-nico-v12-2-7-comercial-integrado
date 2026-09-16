@@ -1,6 +1,11 @@
 {
   "JRC_BROKER": {
     "TITLE": "WhatsApp — JRC Broker",
+    "CONNECTION": "Connection",
+    "CLOSE": "Close",
+    "GRANTS": "Reconnection permissions",
+    "GRANTS_HELP": "Allow selected inbox members to reconnect the approved business number. They cannot create a new connection, change the number or disconnect WhatsApp. Removing an agent from the inbox removes this permission.",
+    "SAVE_GRANTS": "Save permissions",
     "DESCRIPTION": "Connect and manage your company's WhatsApp through JRC.",
     "DISABLED": "JRC Broker is not enabled for this account.",
     "CONFIGURATION": "Inbox setup",
