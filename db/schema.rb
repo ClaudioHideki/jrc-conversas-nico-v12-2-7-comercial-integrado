@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_10_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_16_163000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1059,6 +1059,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_160000) do
     t.integer "sender_name_type", default: 0, null: false
     t.string "business_name"
     t.jsonb "csat_config", default: {}, null: false
+    t.index ["account_id", "id"], name: "jrc_broker_inbox_tenant_unique", unique: true
     t.index ["account_id"], name: "index_inboxes_on_account_id"
     t.index ["channel_id", "channel_type"], name: "index_inboxes_on_channel_id_and_channel_type"
     t.index ["portal_id"], name: "index_inboxes_on_portal_id"
@@ -1132,6 +1133,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_160000) do
     t.index ["account_id"], name: "index_jrc_ai_usage_events_on_account_id"
     t.index ["provider_id"], name: "index_jrc_ai_usage_events_on_provider_id"
     t.index ["user_id"], name: "index_jrc_ai_usage_events_on_user_id"
+  end
+
+  create_table "jrc_broker_inbox_bindings", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.uuid "integration_id", null: false
+    t.uuid "instance_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "inbox_id"], name: "jrc_broker_binding_tenant_unique", unique: true
+    t.index ["account_id", "integration_id"], name: "jrc_broker_connection_unique", unique: true
+    t.index ["inbox_id"], name: "index_jrc_broker_inbox_bindings_on_inbox_id", unique: true
+  end
+
+  create_table "jrc_broker_inbox_grants", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.bigint "user_id", null: false
+    t.boolean "can_pair", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "inbox_id", "user_id"], name: "jrc_broker_grant_unique", unique: true
+  end
+
+  create_table "jrc_broker_integrations", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "broker_origin", null: false
+    t.uuid "organization_id", null: false
+    t.integer "destination_revision", null: false
+    t.text "encrypted_control_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_jrc_broker_integrations_on_account_id", unique: true
+    t.index ["broker_origin", "organization_id"], name: "jrc_broker_remote_org_unique", unique: true
+    t.check_constraint "destination_revision > 0", name: "jrc_broker_revision_positive"
   end
 
   create_table "jrc_campaign_blacklists", force: :cascade do |t|
@@ -2643,6 +2679,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_160000) do
   add_foreign_key "jrc_ai_usage_events", "accounts"
   add_foreign_key "jrc_ai_usage_events", "jrc_ai_providers", column: "provider_id"
   add_foreign_key "jrc_ai_usage_events", "users"
+  add_foreign_key "jrc_broker_inbox_bindings", "inboxes", column: ["account_id", "inbox_id"], primary_key: ["account_id", "id"], on_delete: :cascade
+  add_foreign_key "jrc_broker_inbox_bindings", "jrc_broker_integrations", column: "account_id", primary_key: "account_id", on_delete: :cascade
+  add_foreign_key "jrc_broker_inbox_grants", "account_users", column: ["account_id", "user_id"], primary_key: ["account_id", "user_id"], on_delete: :cascade
+  add_foreign_key "jrc_broker_inbox_grants", "inbox_members", column: ["inbox_id", "user_id"], primary_key: ["inbox_id", "user_id"], on_delete: :cascade
+  add_foreign_key "jrc_broker_inbox_grants", "jrc_broker_inbox_bindings", column: ["account_id", "inbox_id"], primary_key: ["account_id", "inbox_id"], on_delete: :cascade
+  add_foreign_key "jrc_broker_integrations", "accounts", on_delete: :cascade
   add_foreign_key "jrc_campaign_blacklists", "accounts"
   add_foreign_key "jrc_campaign_blacklists", "users", column: "created_by_id"
   add_foreign_key "jrc_campaign_consents", "accounts"
