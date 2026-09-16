@@ -88,3 +88,34 @@ Logs `.codex/j2-*.log`. As chamadas remotas destes specs são WebMock; ainda nã
 constituem o contrato entre processos de J5. Não houve teste em Chatwoot remoto,
 telefone real, publicação ou deploy. Overlays enterprise inspecionados: nenhuma
 classe homônima substituída; políticas genéricas de inbox permanecem intactas.
+
+## J3 — cadastro nativo e painel temporário de conexão
+
+Card WhatsApp — JRC Broker visível somente com flag global e da conta. Factory e
+wizard existentes recebem o novo canal sem alterar `Channel::Api`. Administrador
+configura origem permitida e chave, seleciona conexão existente/nova e agentes;
+o Broker continua sendo o único criador da inbox. Operações recentes permitem retomar
+cadastro após recarga. Timeout preserva intenção/chave idempotente; rejeição HTTP
+definitiva permite corrigir o formulário. UNKNOWN oferece reconciliação explícita.
+O painel só abre depois da consulta que valida/persiste o vínculo no Rails.
+
+QR/código ficam em refs, com expiração e descarte em troca de contexto, desconexão
+da tela, logout, conexão estabelecida, perda de permissão ou falha de acesso. GET
+não gera QR; polling visível 3s com recuo até 15s. Respostas atrasadas não atualizam
+outra conta. Identidade e logout têm confirmações distintas; mudança na revisão
+observada invalida a confirmação aberta. Indicadores separados para inbox, número
+e transporte, sem apresentar READY como entrega comprovada. Strings novas somente
+na fonte en, conforme AGENTS. Nenhuma chave é retornada ao frontend depois de salva.
+
+RED inicial por módulos ausentes; primeiro GREEN 6 testes. Expansão detectou abertura
+prematura de vínculo, formulário preso após 400 e aprovação com identidade mudada.
+Teste de logout passou a usar Vuex instalado, corrigindo fixture que não injetava
+o store durante setup. Gate Vitest: **13 testes / 5 arquivos, todos PASS**.
+ESLint inclui explicitamente `.js,.vue`: sem erros; avisos de chaves i18n dinâmicas
+e um aviso de quebra de linha. Teste Rails adicional RED mostrou que `controlKey`
+camelCase escapava do filtro; filtro ampliado e GREEN **1 exemplo, 0 falhas**.
+Logs `.codex/j3-*.log`. Build Vite produção completo **PASS**, 5090 módulos,
+3m38s. Avisos: Browserslist desatualizado, asset de marca resolvido no runtime e
+chunks grandes preexistentes. Build Rails/CI completo e inspeção de navegador
+pertencem ao gate J5, ainda pendente. Integração em Settings acompanha os metadados
+de vínculo e permissões de J4, para não inferir controle pelo nome do canal.

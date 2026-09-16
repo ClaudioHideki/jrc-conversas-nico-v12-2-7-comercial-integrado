@@ -35,6 +35,12 @@ const isActive = computed(() => {
   if (key === 'website') {
     return props.enabledFeatures.channel_website;
   }
+  if (key === 'jrc_broker') {
+    return (
+      props.enabledFeatures.jrc_broker &&
+      window.chatwootConfig?.jrcBrokerEnabled === true
+    );
+  }
   if (key === 'facebook') {
     return props.enabledFeatures.channel_facebook && hasFbConfigured.value;
   }

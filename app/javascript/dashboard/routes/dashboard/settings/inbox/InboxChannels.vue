@@ -17,6 +17,15 @@ const currentRouteName = computed(() =>
 );
 
 const createFlowSteps = computed(() => {
+  if (route.params.sub_page === 'jrc_broker') {
+    return [
+      {
+        title: t('JRC_BROKER.TITLE'),
+        body: t('JRC_BROKER.DESCRIPTION'),
+        route: 'settings_inboxes_page_channel',
+      },
+    ];
+  }
   const steps = ['CHANNEL', 'INBOX', 'AGENT', 'FINISH'];
 
   const routes = {

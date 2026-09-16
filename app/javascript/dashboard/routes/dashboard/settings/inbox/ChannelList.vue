@@ -79,6 +79,18 @@ const channelList = computed(() => {
     },
   ];
 
+  if (
+    window.chatwootConfig?.jrcBrokerEnabled === true &&
+    enabledFeatures.value.jrc_broker
+  ) {
+    channels.push({
+      key: 'jrc_broker',
+      title: t('JRC_BROKER.TITLE'),
+      description: t('JRC_BROKER.DESCRIPTION'),
+      icon: 'i-woot-whatsapp',
+    });
+  }
+
   if (hasTiktokConfigured.value) {
     channels.push({
       key: 'tiktok',

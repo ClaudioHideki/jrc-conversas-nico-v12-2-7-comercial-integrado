@@ -1,4 +1,5 @@
 import advancedFilters from './advancedFilters.json';
+import jrcBroker from './jrcBroker.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
 import attributesMgmt from './attributesMgmt.json';
@@ -102,4 +103,5 @@ export default {
   ...crm,
   ...whatsappCalling,
   ...jrcCampaigns,
+  ...jrcBroker,
 };
