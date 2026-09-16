@@ -7,7 +7,8 @@ checkout com `db/schema.rb` modificado foram preservados. Broker plano 01 conclu
 localmente até `eeb3b38`, incluindo OpenAPI regenerado depois do commit sem diff.
 
 Sem push, merge, publicação, deploy, credenciais remotas ou números reais.
-Planos 02 e 03 não estão concluídos. Piloto remoto depende de autorização separada.
+Plano 02 implementado; build Docker de CI permanece bloqueado pelo ambiente local.
+Plano 03 segue no Broker. Piloto remoto depende de autorização separada.
 
 ## Ambiente
 
@@ -145,3 +146,81 @@ extensão para concern e normalizar quebras de linha dos arquivos tocados, RuboC
 **7 arquivos, aprovado**; regressão posterior com Inbox: **73 exemplos, 0 falhas**.
 Inclui agente associado a duas inboxes com concessão em somente uma. Logs `.codex/j4-*`.
 Não houve acesso a Chatwoot remoto ou telefone. Build integrado final segue em J5.
+
+## J5 — contrato real entre processos e recuperação antes do ACK
+
+Laboratório descartável executa Rails, Broker, PostgreSQL/RLS e TLS de verdade.
+Provedor de telefone é sintético. Gateway aceita somente dois serviços locais fixos;
+certificado próprio confiado nos backends, sem desativar verificação TLS/SSRF.
+Banco Broker `jrc_contract_20260916`; conta Rails sintética distinta de produção.
+Fixtures reproduzíveis em `tests/playwright/fixtures/jrc-broker/`, excluídas da imagem
+por `.dockerignore`, assim como `.codex` com evidências e credenciais temporárias.
+
+Falhas anteriores de quota da fixture (limite inicial de duas instâncias) e email
+duplicado da factory foram corrigidas no teste. Não eram falhas do produto.
+Contrato final `.codex/j5-contract-security-fixed.log`: **3 exemplos, 0 falhas**.
+Autenticação BFF e chave limitada reais; onboarding repetido cria uma única inbox
+por intenção; pareamento passa por Rails, sem chave no browser; chave de outra
+conta recusada; rollback da flag preserva webhook. Gateway mediu **zero transações
+ociosas abertas** durante POST de criação da inbox em ambos os bancos.
+
+Teste força 503 antes de encaminhar o callback ao Broker. `WebhookJob` reenvia
+assinatura real, preservando corpo/ID de entrega; Broker persiste somente um
+`CHATWOOT_REPLY` após replay e recusa HMAC falso. Adaptador de testes do ActiveJob
+adianta o backoff: não é teste de reinício Sidekiq/Redis nem entrega em telefone.
+Chatwoot externo ainda precisa comprovar sua própria recuperação no piloto.
+
+Correção do emissor limitada a mensagens públicas de saída em inbox JRC persistida:
+até oito tentativas para falhas transitórias, verificação de URL/segredo atuais,
+falha final neutra e nenhuma credencial em logs. Flag da interface não interrompe
+retry. RED funcional **4 falhas**, GREEN/regressão inicial **62 exemplos, 0 falhas**
+(`j5-retry-red-functional.log`, `j5-retry-green.log`). O primeiro RED por DNS da
+fixture foi bloqueio de ambiente, não evidência funcional.
+
+Navegador identificou sobreposição `relative`/`fixed` na sidebar móvel herdada e
+`col-span-6` fora do breakpoint desktop. Ajuste mantém sidebar sobreposta no móvel,
+e conteúdo ocupa uma coluna até `lg`. Teste inicial desktop também corrigiu seletor
+de combobox por nome acessível. Logs anteriores de timeout durante reload em Docker
+Desktop foram diagnosticados em FileUpdateChecker; somente runtime HTTP sintético
+recebe `enable_reloading=false` para servir snapshot compilado fixo.
+
+### Gates de J5
+
+- RSpec regressão: **211 exemplos, 0 falhas**, incluindo novos modelos/services/
+  requests, inboxes, Dashboard Apps, políticas, agent bots e transporte existente.
+  `.codex/j5-regression.log`.
+- Vitest: **15 testes / 7 arquivos, todos PASS** (`j5-vue.log`).
+- RuboCop: **20 arquivos, nenhuma infração** (`j5-rubocop-clean.log`). Normalizadas
+  quebras de linha Windows na cópia Linux dos arquivos JRC para executar o lint.
+- ESLint da integração e InboxChannels: **0 erros / 14 avisos** de i18n dinâmico e
+  formatação (`j5-eslint-feature.log`). Sidebar herdada tem erros preexistentes;
+  comparação com HEAD por ESLint mostra **nenhuma infração adicionada**
+  (`j5-eslint-sidebar-baseline.log`). Não se declara lint global aprovado.
+- Build Vite produção após correção responsiva: **PASS**, 5092 módulos, 5m12s;
+  avisos de Browserslist/chunks/asset de marca preexistentes. `j5-vite-mobile-build.log`.
+- Playwright Chrome, desktop 1440×1000 e mobile 390×844: **2 PASS**, 56,7s
+  (`j5-browser-final.log`). Cadastro até pareamento, foco/Enter, armazenamento sem
+  código, ausência de chave no HTML, nenhuma chamada browser→engine/Broker e troca
+  de conta. Capturas sintéticas antes de gerar código em `.codex/`, não versionadas.
+- Varredura: **17 arquivos alterados e 477 assets**, nenhuma das credenciais do
+  laboratório presente (`j5-artifact-check.log`). Não substitui revisão geral de
+  segredos; flags e credenciais não foram habilitadas em produção.
+- Build real `docker/Dockerfile`: **BLOCKED**. Iniciado com snapshot isolado, sem
+  env privado, interrompido ainda em `bundle install`/dependências nativas após
+  pressão de memória (aproximadamente 440 MiB livres em 12 GiB). Exit -1 por
+  interrupção deliberada, sem imagem final. `.codex/j5-ci-build.log`. Repetir no CI
+  ou máquina com recursos livres, usando HEAD final e `.dockerignore` atualizado.
+
+Inspeção enterprise: sem overrides homônimos de WebhookJob/Trigger, Sidebar ou
+InboxChannels. Regras de tradução mantidas: strings fonte en; homologação pt-BR
+depende do pipeline de tradução do projeto. NICO/Comercial não foram reimplementados;
+regressão funcional integral dessas áreas não foi executada. Não há evidência de
+telefone, ambiente remoto, reinício de fila ou implantação.
+
+Revisão final: o primeiro probe instantâneo contou uma transação breve concorrente
+do worker, causando falso positivo de A26 (`j5-contract-final.log`). A fixture passou
+a comparar duas observações, retendo o HTTP por 150 ms em cada banco; nenhuma
+transação retida foi observada. Contrato repetido após refatoração:
+**3 exemplos, 0 falhas** (`j5-contract-probe.log`). Playwright repetido com capturas
+do formulário preenchido e revisão visual: **2 PASS, 55,2s**
+(`j5-browser-reviewed.log`). Sem alteração de produção entre esses gates.

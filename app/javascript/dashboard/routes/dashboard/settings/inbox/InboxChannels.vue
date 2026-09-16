@@ -81,7 +81,7 @@ const items = computed(() => {
         :global-config="globalConfig"
         :items="items"
       />
-      <div class="col-span-6 flex flex-col overflow-y-auto">
+      <div class="min-w-0 lg:col-span-6 flex flex-col overflow-y-auto">
         <router-view />
       </div>
     </div>

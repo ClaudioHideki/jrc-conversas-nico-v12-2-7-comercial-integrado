@@ -24,19 +24,29 @@ class Webhooks::Trigger
   end
 
   def execute
+    jrc_delivery&.validate!(url: @url, secret: @secret, delivery_id: @delivery_id)
     perform_request
   rescue StandardError => e
     raise RetryableError.new(status: http_status(e), message: e.message) if retryable_agent_bot_error?(e)
+    raise JrcBroker::WebhookDelivery::Unavailable if jrc_delivery&.retryable?(e)
 
     handle_failure(e)
   end
 
   def handle_failure(error)
+    return jrc_delivery.handle_failure(error) if jrc_delivery
+
     handle_error(error)
-    Rails.logger.warn "Exception: Invalid webhook URL #{@url} : #{error.message}"
+    Rails.logger.warn "Webhook delivery failed (#{error.class.name})"
   end
 
   private
+
+  def jrc_delivery
+    return @jrc_delivery if defined?(@jrc_delivery)
+
+    @jrc_delivery = JrcBroker::WebhookDelivery.for(@payload, @webhook_type)
+  end
 
   def perform_request
     body = @payload.to_json

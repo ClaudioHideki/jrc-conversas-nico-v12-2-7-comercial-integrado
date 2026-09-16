@@ -1333,7 +1333,7 @@ const menuSections = computed(() => {
         ],
       },
     ]"
-    class="relative flex flex-col overflow-hidden bg-[#062f57] text-base pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[292px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-white/10 shadow-[8px_0_32px_rgba(5,40,76,0.12)]"
+    class="flex flex-col overflow-hidden bg-[#062f57] text-base pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[292px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-white/10 shadow-[8px_0_32px_rgba(5,40,76,0.12)]"
     :class="[
       {
         'shadow-lg md:shadow-none': isMobileSidebarOpen,

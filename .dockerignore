@@ -1,5 +1,7 @@
 .bundle
 .git
+.codex
+tests/playwright
 local
 .pnpm-store
 services/nico-runtime/node_modules
