@@ -148,6 +148,20 @@ Rails.application.routes.draw do
           end
           resources :campaigns, only: [:index, :create, :show, :update, :destroy]
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
+          resource :jrc_broker, only: [:show, :update], controller: 'jrc_broker' do
+            get :resources
+            get :onboarding, action: :onboardings
+            post :onboarding, action: :create_onboarding
+            get 'onboarding/:operation_id', action: :onboarding
+            post 'onboarding/:operation_id/recover', action: :recover_onboarding
+            get 'inboxes/:inbox_id/status', action: :status
+            post 'inboxes/:inbox_id/pair', action: :pair
+            post 'inboxes/:inbox_id/disconnect', action: :disconnect
+            post 'inboxes/:inbox_id/confirm_identity', action: :confirm_identity
+            get 'inboxes/:inbox_id/grants', action: :grants
+              put 'inboxes/:inbox_id/grants', action: :update_grants
+              put 'inboxes/:inbox_id/agents', action: :assign_agents
+          end
           namespace :channels do
             resource :twilio_channel, only: [:create]
           end

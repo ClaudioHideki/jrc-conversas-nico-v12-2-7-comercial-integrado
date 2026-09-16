@@ -56,3 +56,35 @@ em manutenção controlada, ler os registros com a chave antiga, recifrar com a 
 usando o mesmo contexto por conta, validar leitura, e só então trocar o ambiente.
 Conservar backup recuperável com a chave anterior até testar restauração. Não basta
 alterar a variável, pois isso tornaria as credenciais existentes ilegíveis.
+
+## J2 — controle autenticado por conta e inbox
+
+Endpoints `/api/v1/accounts/:account_id/jrc_broker`: configuração GET/PATCH,
+resources, listagem/criação/consulta/recuperação de onboarding e, por inbox,
+status, pair, disconnect, confirm_identity, agents e grants. Feature global e flag
+da conta obrigatórias. Admin configura/cria/desconecta/confirma; agente precisa
+estar na inbox e ter concessão explícita para reconectar uma identidade já aprovada.
+Status filtra ações; remoção da associação elimina o grant. Revogação durante HTTP
+também impede a entrega do QR. Conta/ator são derivados da sessão no servidor.
+
+HTTP server-side HTTPS verificado, sem proxy ambiente/redirect/retry de mutação,
+timeouts e limite de corpo; credenciais só em header e inspeção filtrada. Respostas
+usam campos permitidos, códigos de erro sanitizados e no-store. QR somente PNG
+base64 estrito e com validade futura. Identificadores do vínculo precisam coincidir
+com status READY antes de persistir, com chamadas HTTP anteriores ao lock local.
+CSRF é obrigatório para autenticação por cookie; header presente sem token válido
+não libera a ação. APIs autenticadas existentes continuam suportadas.
+
+RED inicial de classes ausentes; GREEN 14 exemplos. Ampliação detectou consulta
+DISTINCT sobre JSON do usuário (500), vínculo não READY aceito, credencial inválida
+aceita e ações QR sem validação de validade/formato. O cenário de cookie primeiro
+recebeu 401 porque o modo padrão Devise estava desligado; habilitado no teste,
+reproduziu chamada indevida ao Broker ao acrescentar header inválido. Corrigidos.
+Associação de agentes teve RED por rota ausente, sem criar transporte alternativo.
+
+Gate final: **90 exemplos, 0 falhas**, incluindo modelos/serviços/requests novos,
+InboxPolicy e Inbox existentes. **RuboCop: 16 arquivos, nenhuma infração**.
+Logs `.codex/j2-*.log`. As chamadas remotas destes specs são WebMock; ainda não
+constituem o contrato entre processos de J5. Não houve teste em Chatwoot remoto,
+telefone real, publicação ou deploy. Overlays enterprise inspecionados: nenhuma
+classe homônima substituída; políticas genéricas de inbox permanecem intactas.

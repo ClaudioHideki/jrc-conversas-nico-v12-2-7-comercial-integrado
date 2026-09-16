@@ -1,0 +1,183 @@
+require 'rails_helper'
+
+RSpec.describe 'JRC Broker account control', type: :request do
+  let(:account) { create(:account) }
+  let(:admin) { create(:user, account: account, role: :administrator) }
+  let(:agent) { create(:user, account: account, role: :agent) }
+  let(:inbox) { create(:channel_api, account: account).inbox }
+  let(:connection_id) { SecureRandom.uuid }
+  let(:instance_id) { SecureRandom.uuid }
+  let(:organization_id) { SecureRandom.uuid }
+  let(:prefix) { "/api/v1/accounts/#{account.id}/jrc_broker" }
+  let(:inbox_url) { "#{prefix}/inboxes/#{inbox.id}" }
+  let(:remote) { 'https://broker.example.test/v1/integrations/chatwoot/control' }
+  let(:health) do
+    { integrationId: connection_id, inboxId: inbox.id, instanceId: instance_id, integrationStatus: 'READY', instanceStatus: 'DISCONNECTED',
+      transportStatus: 'UNVERIFIED', identityStatus: 'UNVERIFIED', identityApproved: true, identityRevision: 2, observedNumberSuffix: nil,
+      checkedAt: Time.current.iso8601, callbackVerifiedAt: nil, lastSuccessfulInboundAt: nil, lastSuccessfulOutboundAt: nil,
+      lastError: nil, allowedActions: %w[status pair disconnect manage] }
+  end
+
+  around do |example|
+    with_modified_env(JRC_BROKER_ENABLED: 'true', JRC_BROKER_ALLOWED_ORIGINS: 'https://broker.example.test',
+                      JRC_BROKER_CREDENTIAL_KEY: Base64.strict_encode64('k' * 32), FRONTEND_URL: 'https://chatwoot.example.test') { example.run }
+  end
+
+  before do
+    account.enable_features!('jrc_broker')
+    encrypted = JrcBroker::Configuration.credential_store.encrypt(account_id: account.id, token: 'synthetic-control')
+    JrcBrokerIntegration.create!(account: account, broker_origin: 'https://broker.example.test', organization_id: organization_id,
+                                 destination_revision: 1, encrypted_control_key: encrypted)
+    JrcBrokerInboxBinding.create!(account: account, inbox: inbox, integration_id: connection_id, instance_id: instance_id)
+    stub_request(:get, "#{remote}/context").with(headers: { 'X-JRC-API-Key' => 'synthetic-control' }).to_return(status: 200, body: {
+      organizationId: organization_id, accountId: account.id, chatwootOrigin: 'https://chatwoot.example.test', destinationRevision: 1, capabilities: {}
+    }.to_json)
+    stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200, body: health.to_json)
+  end
+
+  it 'rejects another account before calling the Broker and blocks the feature when disabled' do
+    stranger = create(:user, account: create(:account), role: :administrator)
+    get "#{inbox_url}/status", headers: stranger.create_new_auth_token
+    expect(response).to have_http_status(:forbidden)
+    expect(a_request(:get, "#{remote}/context")).not_to have_been_made
+    with_modified_env(JRC_BROKER_ENABLED: 'false') do
+      get "#{inbox_url}/status", headers: admin.create_new_auth_token
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  it 'requires inbox assignment and explicit grant, and removes authority on membership removal' do
+    headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-pair-intent')
+    post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    member = create(:inbox_member, inbox: inbox, user: agent)
+    post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    result = { instance: { id: instance_id, status: 'CONNECTING' }, action: { type: 'NONE', reason: 'CONNECTION_PENDING' } }
+    stub = stub_request(:post, "#{remote}/connections/#{connection_id}/pair")
+           .with(headers: { 'X-JRC-External-Actor' => agent.id.to_s }).to_return(status: 200, body: result.to_json)
+    post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.headers['Cache-Control']).to eq('no-store')
+    expect(response.body).not_to include('synthetic-control')
+    member.destroy!
+    post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(stub).to have_been_requested.once
+  end
+
+  it 'does not expose admin actions to a delegated agent or allow a first or changed identity' do
+    create(:inbox_member, inbox: inbox, user: agent)
+    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-pair-intent')
+    get "#{inbox_url}/status", headers: headers
+    expect(response.parsed_body['allowedActions']).to eq(%w[status pair])
+    post "#{inbox_url}/disconnect", headers: headers, params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    [health.merge(identityApproved: false), health.merge(identityStatus: 'CONFIRMATION_REQUIRED')].each do |value|
+      stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200, body: value.to_json)
+      post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+    expect(a_request(:post, "#{remote}/connections/#{connection_id}/pair")).not_to have_been_made
+  end
+
+  it 'rejects IDs and actors from request bodies, missing idempotency and a foreign inbox' do
+    post "#{inbox_url}/pair", headers: admin.create_new_auth_token, params: {}, as: :json
+    expect(response).to have_http_status(:bad_request)
+    post "#{inbox_url}/pair", headers: admin.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-intent'),
+                              params: { organizationId: SecureRandom.uuid, actor: 'administrator' }, as: :json
+    expect(response).to have_http_status(:bad_request)
+    other_inbox = create(:inbox)
+    get "#{prefix}/inboxes/#{other_inbox.id}/status", headers: admin.create_new_auth_token
+    expect(response).to have_http_status(:not_found)
+    expect(a_request(:get, "#{remote}/context")).not_to have_been_made
+  end
+
+  it 'fails closed on revoked remote credentials without including the remote body' do
+    stub_request(:get, "#{remote}/context").to_return(status: 403, body: 'private remote secret')
+    get "#{inbox_url}/status", headers: admin.create_new_auth_token
+    expect(response).to have_http_status(:forbidden)
+    expect(response.body).not_to include('private remote secret', 'synthetic-control')
+  end
+
+  it 'requires CSRF for cookie authentication even when an unverified token header is supplied' do
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    allow(DeviseTokenAuth).to receive(:enable_standard_devise_support).and_return(true)
+    sign_in admin
+    [{}, { 'access-token' => 'invalid', 'client' => 'invalid' }].each do |headers|
+      post "#{inbox_url}/pair", headers: headers.merge('Idempotency-Key' => 'synthetic-intent'), params: {}, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body['code']).to eq('JRC_BROKER_CSRF_REQUIRED')
+    end
+    expect(a_request(:get, "#{remote}/context")).not_to have_been_made
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
+  end
+
+  it 'does not release a pairing code when its grant is removed during the remote call' do
+    create(:inbox_member, inbox: inbox, user: agent)
+    grant = JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    stub_request(:post, "#{remote}/connections/#{connection_id}/pair").to_return do
+      grant.destroy!
+      { status: 200, body: { instance: { id: instance_id }, action: { type: 'PAIRING_CODE', code: 'SYNTHETIC',
+                                                                      expiresAt: 30.seconds.from_now.iso8601 } }.to_json }
+    end
+    post "#{inbox_url}/pair", headers: agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-intent'), params: {}, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(response.body).not_to include('SYNTHETIC')
+  end
+
+  it 'lets an admin grant and revoke only current inbox members without changing the remote channel' do
+    member = create(:inbox_member, inbox: inbox, user: agent)
+    headers = admin.create_new_auth_token
+    put "#{inbox_url}/grants", headers: headers, params: { userIds: [agent.id] }, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body['data']).to include(include('user_id' => agent.id, 'can_pair' => true))
+    put "#{inbox_url}/grants", headers: agent.create_new_auth_token, params: { userIds: [] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+    put "#{inbox_url}/grants", headers: headers, params: { userIds: [] }, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(JrcBrokerInboxGrant.exists?(inbox_id: inbox.id)).to be(false)
+    member.destroy!
+    put "#{inbox_url}/grants", headers: headers, params: { userIds: [agent.id] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(a_request(:get, "#{remote}/context")).not_to have_been_made
+  end
+
+  it 'binds only a completed operation whose READY inbox and identifiers belong to this account' do
+    operation_id = SecureRandom.uuid
+    result = { operationId: operation_id, state: 'SUCCEEDED', stage: 'DONE', instanceId: instance_id,
+               integrationId: connection_id, inboxId: inbox.id, lastError: nil }
+    JrcBrokerInboxBinding.where(inbox_id: inbox.id).destroy_all
+    stub_request(:get, "#{remote}/onboarding/#{operation_id}").to_return(status: 200, body: result.to_json)
+    stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200,
+                                                                                  body: health.merge(integrationStatus: 'FAILED').to_json)
+    get "#{prefix}/onboarding/#{operation_id}", headers: admin.create_new_auth_token
+    expect(response).to have_http_status(:bad_gateway)
+    expect(JrcBrokerInboxBinding.exists?(inbox_id: inbox.id)).to be(false)
+    stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200, body: health.to_json)
+    get "#{prefix}/onboarding/#{operation_id}", headers: admin.create_new_auth_token
+    expect(response).to have_http_status(:ok)
+    expect(JrcBrokerInboxBinding.find_by!(inbox_id: inbox.id).integration_id).to eq(connection_id)
+    expect(Inbox.where(id: inbox.id).count).to eq(1)
+  end
+
+  it 'assigns account members through the Broker only for administrators' do
+    headers = admin.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-members')
+    stub = stub_request(:put, "#{remote}/connections/#{connection_id}/agents")
+           .with(body: { agentIds: [agent.id] }.to_json, headers: { 'X-JRC-External-Actor' => admin.id.to_s })
+           .to_return(status: 200, body: { ok: true }.to_json)
+    put "#{inbox_url}/agents", headers: headers, params: { agentIds: [agent.id] }, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(stub).to have_been_requested.once
+    put "#{inbox_url}/agents", headers: agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-members'),
+                               params: { agentIds: [agent.id] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+    put "#{inbox_url}/agents", headers: headers, params: { agentIds: [create(:user).id] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(stub).to have_been_requested.once
+  end
+end

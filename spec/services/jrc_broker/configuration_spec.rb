@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe JrcBroker::Configuration do
   let(:account) { create(:account) }
   let(:organization_id) { SecureRandom.uuid }
-  let(:client) { double('Broker client') }
+  let(:client) { instance_double(JrcBroker::Client) }
 
   around do |example|
     with_modified_env(JRC_BROKER_ENABLED: 'true', JRC_BROKER_ALLOWED_ORIGINS: 'https://broker.example.test',
@@ -16,7 +16,9 @@ RSpec.describe JrcBroker::Configuration do
       expect { described_class.credential_store }.to raise_error(JrcBroker::CredentialStore::InvalidCredential)
     end
     expect { described_class.allowed_origin!('https://attacker.example.test') }.to raise_error(JrcBroker::Configuration::InvalidConfiguration)
-    expect { described_class.allowed_origin!('https://broker.example.test@attacker.example.test') }.to raise_error(JrcBroker::Configuration::InvalidConfiguration)
+    expect do
+      described_class.allowed_origin!('https://broker.example.test@attacker.example.test')
+    end.to raise_error(JrcBroker::Configuration::InvalidConfiguration)
   end
 
   it 'persists only after the authenticated context matches this account, organization and Chatwoot origin' do
@@ -30,7 +32,7 @@ RSpec.describe JrcBroker::Configuration do
     expect(JrcBrokerIntegration.where(account: account)).not_to exist
     allow(client).to receive(:context).and_return(context)
     saved = described_class.configure!(account: account, origin: 'https://broker.example.test', organization_id: organization_id,
-                                      token: 'synthetic-control', client: client)
+                                       token: 'synthetic-control', client: client)
     expect(described_class.credential_store.decrypt(account_id: account.id, ciphertext: saved.encrypted_control_key)).to eq('synthetic-control')
     expect(saved.organization_id).to eq(organization_id)
   end
