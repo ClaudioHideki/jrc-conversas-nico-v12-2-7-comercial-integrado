@@ -1,0 +1,11 @@
+{
+  "JRC_BROKER": {
+    "CONNECT_WHATSAPP": "Conectar seu WhatsApp",
+    "CONNECTIONS_HELP": "Confira a conexão da sua caixa de entrada e escaneie o QR Code sem abrir uma conversa.",
+    "REFRESH_CONNECTIONS": "Atualizar caixas",
+    "LOADING_CONNECTIONS": "Carregando suas caixas de WhatsApp…",
+    "NO_CONNECTIONS": "Nenhuma caixa de WhatsApp JRC está disponível para você nesta conta. Peça ao administrador para vincular a caixa e liberar seu acesso.",
+    "SELECT_INBOX": "Caixa de entrada do WhatsApp",
+    "AGENT_CONNECTIONS_HELP": "A reconexão está disponível para membros autorizados da caixa. O administrador aprova a primeira conexão e qualquer troca do número da empresa."
+  }
+}

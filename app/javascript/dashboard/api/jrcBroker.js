@@ -19,6 +19,15 @@ export const createJrcBrokerApi = accountId => {
   const inboxPath = (id, action) =>
     `/inboxes/${encodeURIComponent(id)}/${action}`;
   return {
+    // Use the existing inbox policy with a captured account, not the global cache.
+    inboxes: async signal => {
+      const response = await axios({
+        method: 'get',
+        url: `/api/v1/accounts/${Number(accountId)}/inboxes`,
+        signal,
+      });
+      return response.data.payload;
+    },
     configuration: signal => request('get', '', undefined, undefined, signal),
     configure: (data, signal) => request('patch', '', data, undefined, signal),
     resources: signal =>

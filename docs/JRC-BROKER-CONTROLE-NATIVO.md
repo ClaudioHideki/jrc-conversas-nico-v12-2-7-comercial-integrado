@@ -30,16 +30,50 @@ limita sua autoridade à conta/inbox e chama o Broker no servidor.
 
 ## Permissões e códigos
 
-Na aba JRC da inbox, o administrador pode conceder reconexão a membros atuais.
-O agente abre **Conexão** no atendimento e reconecta somente uma identidade já
-aprovada. Ele não configura credenciais, não cria a primeira vinculação, não
+Na aba **Conectar seu WhatsApp** da inbox, o administrador pode conceder reconexão
+a membros atuais. O agente acessa **Conectar seu WhatsApp** no menu de atendimento,
+seleciona uma caixa autorizada e consulta seu estado ou solicita o QR. A página
+`/app/accounts/:accountId/whatsapp-connections` funciona sem contato ou conversa.
+O botão **Conexão** no atendimento permanece como atalho opcional.
+O agente reconecta somente uma identidade já aprovada. Ele não configura credenciais, não cria a primeira vinculação, não
 aprova outro número e não desconecta. Remover a associação à inbox remove o grant.
 Revogação é verificada novamente no servidor; a interface descarta o código.
+
+Um número pertence à caixa e à empresa; não é criado automaticamente para cada
+login de agente. Vários agentes podem atender uma mesma caixa. A listagem reutiliza
+a política de inboxes do Rails; o controle revalida o vínculo e a delegação em cada
+chamada. A página não libera configurações administrativas para agentes.
 
 O código é temporário, não aparece automaticamente ao consultar status e fica
 somente na memória da tela. Expiração, troca de contexto, logout e perda de acesso
 descartam o valor. Solicitar outro código representa uma nova intenção explícita.
 Uma identidade diferente pausa o transporte até confirmação administrativa.
+
+## Chatwoot de terceiros
+
+- **Sem modificar o Chatwoot:** a API de inbox e o webhook transportam mensagens.
+  O portal do Broker oferece conexão independente de conversa. O Dashboard App
+  pode ser configurado como atalho dentro de uma conversa; não instala menu nem
+  aba nas configurações da inbox. O login do Chatwoot não autentica automaticamente
+  esse portal ou iframe.
+- **Com acesso nativo:** instalar a integração Rails/Vue desta branch no código
+  da versão homologada do cliente. Reutiliza autenticação do Chatwoot, canal API,
+  API de controle do Broker e vínculo da caixa; a chave de controle fica cifrada
+  no backend. A instalação inicial exige as tabelas aditivas do módulo original.
+  Este incremento de navegação não acrescenta migrações.
+- **Distribuição:** entregar patch versionado, requisitos, migrações, feature flag,
+  testes de contrato e procedimento de rollback. Não há pacote universal testado
+  em qualquer versão/fork. É necessário acesso ao código/build da instalação;
+  somente token da conta não permite alterar a interface de um serviço hospedado.
+
+Para conta já provisionada exclusivamente pelo portal, não deduzir o vínculo
+nativo pelo nome, webhook ou atributos arbitrários. Conferir o mapeamento com a
+API de controle e estabelecer o registro local pelo fluxo administrativo
+homologado antes de habilitar agentes. As contas do laboratório de Dashboard App
+não foram convertidas automaticamente por este incremento.
+
+Referência: [Dashboard Apps do Chatwoot](https://www.chatwoot.com/hc/user-guide/articles/1677691702-how-to-use-dashboard-apps),
+consultada em 17/09/2026: o ponto de extensão documentado é a janela da conversa.
 
 ## Credenciais e indisponibilidade
 

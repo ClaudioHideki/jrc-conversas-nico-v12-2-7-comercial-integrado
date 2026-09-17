@@ -282,7 +282,7 @@ export default {
       ) {
         visibleToAllChannelTabs.push({
           key: 'jrc-broker',
-          name: this.$t('JRC_BROKER.TITLE'),
+          name: this.$t('JRC_BROKER.CONNECT_WHATSAPP'),
         });
       }
       return visibleToAllChannelTabs;

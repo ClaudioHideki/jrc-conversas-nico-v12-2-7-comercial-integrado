@@ -1,5 +1,12 @@
 {
   "JRC_BROKER": {
+    "CONNECT_WHATSAPP": "Connect your WhatsApp",
+    "CONNECTIONS_HELP": "Check your inbox connection and scan its QR code without opening a conversation.",
+    "REFRESH_CONNECTIONS": "Refresh inboxes",
+    "LOADING_CONNECTIONS": "Loading your WhatsApp inboxes…",
+    "NO_CONNECTIONS": "No JRC WhatsApp inbox is available to you in this account. Ask an administrator to link your inbox and assign your access.",
+    "SELECT_INBOX": "WhatsApp inbox",
+    "AGENT_CONNECTIONS_HELP": "Reconnection is available to authorized inbox members. An administrator approves the first connection and any change of business number.",
     "TITLE": "WhatsApp — JRC Broker",
     "CONNECTION": "Connection",
     "CLOSE": "Close",

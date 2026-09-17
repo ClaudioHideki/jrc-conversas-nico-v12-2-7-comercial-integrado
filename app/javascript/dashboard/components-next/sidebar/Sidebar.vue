@@ -118,6 +118,11 @@ const hasAdvancedAssignment = computed(() => {
 const hasJrcCrm = computed(() =>
   isFeatureEnabledonAccount.value(accountId.value, FEATURE_FLAGS.JRC_CRM)
 );
+const hasJrcBroker = computed(
+  () =>
+    window.chatwootConfig?.jrcBrokerEnabled === true &&
+    isFeatureEnabledonAccount.value(accountId.value, 'jrc_broker')
+);
 const hasSales = computed(() =>
   isFeatureEnabledonAccount.value(accountId.value, FEATURE_FLAGS.SALES)
 );
@@ -1079,6 +1084,16 @@ const menuItems = computed(() => {
       activeOn: ['jrc_email_center', 'conversation_through_inbox'],
       ignoreFeatureFlag: true,
     },
+    hasJrcBroker.value
+      ? {
+          name: 'JRC Broker Connections',
+          label: t('JRC_BROKER.CONNECT_WHATSAPP'),
+          icon: 'i-lucide-qr-code',
+          to: accountScopedRoute('jrc_broker_connections'),
+          activeOn: ['jrc_broker_connections'],
+          ignoreFeatureFlag: true,
+        }
+      : null,
     {
       name: 'JRC Calls Center',
       label: 'Ligações',
@@ -1272,6 +1287,7 @@ const menuSections = computed(() => {
     'JRC AI Insights', 'Captain', 'JRC Intelligent Automation', 'Companies',
     'CRM', 'Sales', 'JRC Campaigns', 'Reports', 'JRC AI Administration',
     'Video Conference', 'Settings',
+    'JRC Broker Connections',
   ]);
   const legacyExtras = legacyMenuItems.value
     .filter(item => item && !mappedNames.has(item.name))
@@ -1285,6 +1301,7 @@ const menuSections = computed(() => {
       items: take([
         'JRC Cockpit',
         'Conversation',
+        'JRC Broker Connections',
 
         'JRC Email Center',
         'JRC Calls Center',
