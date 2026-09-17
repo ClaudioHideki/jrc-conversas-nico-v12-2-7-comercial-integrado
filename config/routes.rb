@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get '/flows/portal(/:public_id)', to: 'jrc_flows/portal#show'
+  post '/jrc_flows/events/:public_id', to: 'jrc_flows/events#create'
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
@@ -262,6 +264,44 @@ Rails.application.routes.draw do
               resources :activities, only: :create
             end
             resources :activities, only: :update
+          end
+          resources :jrc_flow_connections, only: [:index, :show, :create, :update] do
+            member do
+              post :verify
+              post :install
+              post :disconnect
+            end
+            resources :flows, controller: 'jrc_remote_flows' do
+              get :metadata, on: :collection
+              post :import_preview, on: :collection
+              post :import_definition, on: :collection
+              member do
+                get :export_definition
+                get :runs
+                post :activate
+                post :pause
+                post :duplicate
+                post :stop_run
+                post :validate_definition
+                post :simulate
+              end
+            end
+          end
+          resources :jrc_flows do
+            get :metadata, on: :collection
+            post :import_preview, on: :collection
+            post :import_definition, on: :collection
+            member do
+              get :export_definition
+              post :activate
+              post :pause
+              post :duplicate
+              post :stop_run
+              post :validate_definition
+              post :simulate
+              post :start
+              get :runs
+            end
           end
           namespace :jrc_campaigns do
             resources :consents, only: [:index, :create, :destroy]

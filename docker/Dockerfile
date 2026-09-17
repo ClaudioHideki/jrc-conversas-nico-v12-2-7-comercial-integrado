@@ -65,6 +65,11 @@ COPY Gemfile Gemfile.lock ./
 RUN apk update && apk add --no-cache build-base musl ruby-full ruby-dev gcc make musl-dev openssl openssl-dev g++ linux-headers xz vips
 RUN bundle config set --local force_ruby_platform true
 
+# gRPC otherwise uses every visible host CPU while compiling its C++ library.
+# Keep peak memory bounded on shared Docker/Dokploy builders.
+ARG GRPC_RUBY_BUILD_PROCS=2
+ENV GRPC_RUBY_BUILD_PROCS=${GRPC_RUBY_BUILD_PROCS}
+
 # Do not install development or test gems in production
 RUN if [ "$RAILS_ENV" = "production" ]; then \
   bundle config set without 'development test'; bundle install -j 4 -r 3; \
@@ -86,8 +91,9 @@ RUN if [ "$RAILS_ENV" = "production" ]; then \
   && rm -rf spec node_modules tmp/cache; \
   fi
 
-# Generate .git_sha from Git when available, or identify ZIP-based local builds.
-RUN (git rev-parse HEAD 2>/dev/null || echo local-development) > /app/.git_sha
+# Identify builds even when the Git directory is excluded from the context.
+ARG GIT_SHA=local-development
+RUN printf '%s\n' "$GIT_SHA" > /app/.git_sha
 
 # Remove unnecessary files
 RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \
@@ -149,6 +155,6 @@ COPY --from=pre-builder /app/.git_sha /app/.git_sha
 
 WORKDIR /app
 
-RUN chmod +x docker/entrypoints/*.sh
+RUN sed -i 's/\r$//' docker/entrypoints/*.sh && chmod +x docker/entrypoints/*.sh
 
 EXPOSE 3000

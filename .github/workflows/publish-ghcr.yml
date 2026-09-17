@@ -1,4 +1,4 @@
-name: Publicar imagem JRC Conversas no GHCR
+name: Legado - Publicar JRC Lab3 (não usar para Flows)
 
 on:
   workflow_dispatch:
@@ -7,9 +7,6 @@ on:
         description: Tag da imagem Docker
         required: true
         default: v4.16.2-jrc-lab3.1
-  push:
-    tags:
-      - 'v*'
 
 permissions:
   contents: read

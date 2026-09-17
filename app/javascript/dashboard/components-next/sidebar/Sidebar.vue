@@ -1142,6 +1142,17 @@ const menuItems = computed(() => {
       activeOn: ['whatsapp_calling_index'],
       ignoreFeatureFlag: true,
     },
+    window.chatwootConfig?.jrcFlowsEnabled === true &&
+    isFeatureEnabledonAccount.value(accountId.value, 'jrc_flows')
+      ? {
+          name: 'JRC Flows',
+          label: 'Flows',
+          icon: 'i-lucide-workflow',
+          to: accountScopedRoute('jrc_flows'),
+          activeOn: ['jrc_flows'],
+          ignoreFeatureFlag: true,
+        }
+      : null,
     contactsModule ? { ...contactsModule, label: 'Contatos' } : null,
     companiesModule ? { ...companiesModule, label: 'Empresas' } : null,
     {
@@ -1284,7 +1295,7 @@ const menuSections = computed(() => {
   const mappedNames = new Set([
     'JRC Cockpit', 'Conversation', 'JRC Email Center',
     'JRC Calls Center', 'WhatsApp Calling', 'Contacts', 'JRC AI Agents',
-    'JRC AI Insights', 'Captain', 'JRC Intelligent Automation', 'Companies',
+    'JRC AI Insights', 'Captain', 'JRC Intelligent Automation', 'JRC Flows', 'Companies',
     'CRM', 'Sales', 'JRC Campaigns', 'Reports', 'JRC AI Administration',
     'Video Conference', 'Settings',
     'JRC Broker Connections',
@@ -1317,6 +1328,7 @@ const menuSections = computed(() => {
       name: 'intelligence',
       label: 'Inteligencia',
       items: take([
+        'JRC Flows',
         'JRC AI Agents',
         'JRC AI Insights',
         'Captain',

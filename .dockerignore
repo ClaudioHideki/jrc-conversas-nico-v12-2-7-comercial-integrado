@@ -1,6 +1,8 @@
 .bundle
 .git
 .codex
+.sessions
+services/flows-sandbox/node_modules
 tests/playwright
 local
 .pnpm-store
@@ -8,6 +10,8 @@ services/nico-runtime/node_modules
 services/nico-runtime/dist
 .env
 .env.*
+**/.env
+**/.env.*
 docker-compose.*
 docker/Dockerfile
 docker/dockerfiles

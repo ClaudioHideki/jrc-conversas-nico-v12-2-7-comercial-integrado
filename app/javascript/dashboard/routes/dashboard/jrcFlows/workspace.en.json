@@ -1,0 +1,21 @@
+{
+  "TITLE": "Flows",
+  "CONNECTIONS": "Conexões WhatsApp",
+  "DISABLED": "Flows não está habilitado para esta conta.",
+  "AGENT_HINT": "Acompanhe os fluxos das suas caixas. A criação, as credenciais e a ativação são gerenciadas pelo administrador.",
+  "EMPTY": "Nenhum flow está vinculado às caixas às quais você tem acesso.",
+  "RUNS": "Ver execuções",
+  "NO_RUNS": "Nenhuma execução disponível nestas caixas.",
+  "ERROR": "Não foi possível carregar os flows. Verifique seu acesso ou tente novamente.",
+  "REFRESH": "Atualizar",
+  "CONVERSATION": "Abrir conversa",
+  "draft": "Rascunho",
+  "active": "Ativo",
+  "paused": "Pausado",
+  "running": "Em execução",
+  "waiting": "Aguardando resposta",
+  "delayed": "Aguardando prazo",
+  "completed": "Concluído",
+  "failed": "Falhou",
+  "cancelled": "Cancelado"
+}

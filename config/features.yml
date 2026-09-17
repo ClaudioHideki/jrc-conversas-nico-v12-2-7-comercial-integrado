@@ -284,3 +284,7 @@
   display_name: JRC Broker
   enabled: false
   column: feature_flags_ext_1
+- name: jrc_flows
+  display_name: JRC Flows
+  enabled: false
+  column: feature_flags_ext_1

@@ -1,0 +1,7 @@
+{
+  "name": "jrc-flows-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test sandbox.test.mjs" },
+  "dependencies": { "quickjs-emscripten": "0.31.0" }
+}

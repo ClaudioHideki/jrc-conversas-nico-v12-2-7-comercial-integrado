@@ -1,3 +1,4 @@
+import { routes as jrcFlowRoutes } from './jrcFlows/routes';
 import settings from './settings/settings.routes';
 import conversation from './conversation/conversation.routes';
 import { routes as searchRoutes } from '../../modules/search/search.routes';
@@ -53,6 +54,7 @@ export default {
         ...jrcServiceRoutes,
         ...jrcAiRoutes,
         ...jrcBrokerRoutes,
+        ...jrcFlowRoutes,
       ],
     },
     {

@@ -79,3 +79,11 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+jrc_flows_recovery_job:
+  cron: '* * * * *'
+  class: 'JrcFlows::RecoveryJob'
+  queue: scheduled_jobs
+jrc_flows_remote_recovery_job:
+  cron: '* * * * *'
+  class: 'JrcFlows::RemoteRecoveryJob'
+  queue: scheduled_jobs

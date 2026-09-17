@@ -1,0 +1,42 @@
+# Overlay for the EXISTING JRC stack. See docs/DEPLOY-FLOWS-BROKER.md.
+# Adapt rails/sidekiq service names to the deployed stack before merging.
+x-jrc-modules: &jrc-modules
+  JRC_FLOWS_ENABLED: ${JRC_FLOWS_ENABLED:-false}
+  JRC_FLOWS_EXTERNAL_BETA: "false"
+  JRC_FLOWS_SANDBOX_URL: http://flows-sandbox:8080
+  JRC_FLOWS_SANDBOX_TOKEN: ${JRC_FLOWS_SANDBOX_TOKEN:?required}
+  JRC_BROKER_ENABLED: ${JRC_BROKER_ENABLED:-false}
+  JRC_BROKER_ALLOWED_ORIGINS: ${JRC_BROKER_ALLOWED_ORIGINS:?required}
+  JRC_BROKER_CREDENTIAL_KEY: ${JRC_BROKER_CREDENTIAL_KEY:?required}
+
+services:
+  rails:
+    image: ${JRC_APP_IMAGE:?required}
+    environment: *jrc-modules
+    networks:
+      default: {}
+      flows_internal: {}
+  sidekiq:
+    image: ${JRC_APP_IMAGE:?required}
+    environment: *jrc-modules
+    networks:
+      default: {}
+      flows_internal: {}
+  flows-sandbox:
+    image: ${JRC_FLOWS_SANDBOX_IMAGE:?required}
+    restart: unless-stopped
+    environment:
+      JRC_FLOWS_SANDBOX_TOKEN: ${JRC_FLOWS_SANDBOX_TOKEN:?required}
+    networks:
+      flows_internal: {}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 64
+
+networks:
+  default: {}
+  flows_internal:
+    internal: true

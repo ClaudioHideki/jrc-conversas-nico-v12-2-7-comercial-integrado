@@ -33,6 +33,7 @@
     <script>
       window.chatwootConfig = {
         jrcBrokerEnabled: <%= JrcBroker::Configuration.enabled? %>,
+        jrcFlowsEnabled: <%= ENV['JRC_FLOWS_ENABLED'] == 'true' %>,
         hostURL: '<%= ENV.fetch('FRONTEND_URL', '') %>',
         helpCenterURL: '<%= ENV.fetch('HELPCENTER_URL', '') %>',
         fbAppId: '<%= @global_config['FB_APP_ID'] %>',

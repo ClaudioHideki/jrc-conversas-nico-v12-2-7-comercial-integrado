@@ -110,4 +110,6 @@ Procfile.worktree
 /output/
 services/nico-runtime/node_modules/
 services/nico-runtime/dist/
+services/flows-sandbox/node_modules/
+!services/flows-sandbox/package-lock.json
 *.zip

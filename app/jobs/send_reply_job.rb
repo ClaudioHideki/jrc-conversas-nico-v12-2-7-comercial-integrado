@@ -17,6 +17,9 @@ class SendReplyJob < ApplicationJob
 
   def perform(message_id)
     message = Message.find(message_id)
+    if message.content_attributes.to_h['jrc_flow_run_id']
+      return JrcFlows::Delivery.new(message).perform { deliver(message) }
+    end
     if message.content_attributes.to_h['nico_delegation']
       return deliver_nico(message)
     end

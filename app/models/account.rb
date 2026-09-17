@@ -24,6 +24,7 @@
 #
 
 class Account < ApplicationRecord
+  has_many :jrc_flows, dependent: :destroy
   has_many :sip_credentials, dependent: :destroy
   has_many :video_conference_settings, dependent: :destroy
   has_one :telephony_integration, dependent: :destroy

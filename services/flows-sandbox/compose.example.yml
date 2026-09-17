@@ -1,0 +1,15 @@
+# Merge this service into the JRC deployment network; do not publish its port.
+services:
+  flows-sandbox:
+    build: .
+    environment:
+      JRC_FLOWS_SANDBOX_TOKEN: ${JRC_FLOWS_SANDBOX_TOKEN:?Configure a random shared token}
+    read_only: true
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 64
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    restart: unless-stopped
+# Rails and Sidekiq need the same JRC_FLOWS_SANDBOX_TOKEN and:
+# JRC_FLOWS_SANDBOX_URL=http://flows-sandbox:8080/

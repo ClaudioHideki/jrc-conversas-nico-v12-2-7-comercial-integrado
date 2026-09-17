@@ -1,0 +1,80 @@
+# Historical external-beta stack. NOT an upgrade for the existing JRC database.
+# Current native release: deploy/jrc/compose.flows-broker.yml and docs/DEPLOY-FLOWS-BROKER.md.
+name: jrc-flows-central
+x-app: &app
+  image: ${FLOWS_IMAGE:-jrc-flows-central:20260916}
+  env_file: .env
+  environment:
+    RAILS_ENV: production
+    NODE_ENV: production
+    INSTALLATION_ENV: docker
+    RAILS_LOG_TO_STDOUT: 'true'
+    RAILS_SERVE_STATIC_FILES: 'true'
+    POSTGRES_HOST: postgres
+    POSTGRES_DATABASE: flows_central
+    POSTGRES_USERNAME: postgres
+    REDIS_URL: redis://redis:6379/0
+    JRC_FLOWS_SANDBOX_URL: http://flows-sandbox:8080/
+    JRC_FLOWS_LOCAL_ORIGIN_MAP: '{}'
+    JRC_FLOWS_LOCAL: 'false'
+    JRC_NICO_LOCAL_STATIC: 'false'
+    ENABLE_ACCOUNT_SIGNUP: 'false'
+  volumes: [storage:/app/storage]
+  restart: unless-stopped
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    flows-sandbox: {condition: service_started}
+services:
+  web:
+    <<: *app
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    entrypoint: [sh, docker/entrypoints/rails.sh]
+    command: [bundle, exec, rails, s, -b, 0.0.0.0, -p, '3000']
+    ports: ['127.0.0.1:${FLOWS_HTTP_PORT:-3216}:3000']
+  worker:
+    <<: *app
+    command: [bundle, exec, sidekiq, -C, config/sidekiq.yml]
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: flows_central
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes: [postgres:/var/lib/postgresql/data]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d flows_central']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7.4.0-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Configure REDIS_PASSWORD}
+    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    volumes: [redis:/data]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  flows-sandbox:
+    image: ${FLOWS_SANDBOX_IMAGE:-jrc-flows-sandbox:20260916}
+    build: ../../services/flows-sandbox
+    environment:
+      JRC_FLOWS_SANDBOX_TOKEN: ${JRC_FLOWS_SANDBOX_TOKEN:?Configure JRC_FLOWS_SANDBOX_TOKEN}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 64
+    restart: unless-stopped
+volumes:
+  postgres:
+  redis:
+  storage:

@@ -1,5 +1,7 @@
 # Publicação NICO Platform — 14/09/2026
 
+> Histórico da entrega Nico de 14/09. Para a release conjunta JRC + Flows + Broker de 17/09, os workflows e as tags foram atualizados; siga [DEPLOY-FLOWS-BROKER.md](DEPLOY-FLOWS-BROKER.md).
+
 O workflow `build-ghcr.yml` publica os dois componentes da branch
 `codex/nico-platform-refactor`, usando o mesmo commit.
 

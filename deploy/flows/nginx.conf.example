@@ -1,0 +1,24 @@
+# Substitua domínio e caminhos de certificado. A porta deve coincidir com FLOWS_HTTP_PORT.
+server {
+    listen 80;
+    server_name flows.suaempresa.com.br;
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name flows.suaempresa.com.br;
+    ssl_certificate /etc/letsencrypt/live/flows.suaempresa.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/flows.suaempresa.com.br/privkey.pem;
+    client_max_body_size 5m;
+    location / {
+        proxy_pass http://127.0.0.1:3216;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 120s;
+    }
+    # Preserve CSP e X-Frame-Options emitidos pela aplicação. Não acrescente DENY globalmente.
+}

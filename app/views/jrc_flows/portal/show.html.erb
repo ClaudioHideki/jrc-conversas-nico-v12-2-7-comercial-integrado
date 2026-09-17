@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="pt-BR" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flows</title>
+    <%= vite_client_tag %>
+    <%= vite_javascript_tag 'flows_portal' %>
+  </head>
+  <body class="m-0 bg-n-background text-n-slate-12">
+    <div id="flows-portal" data-config="<%= @portal_config.to_json %>"></div>
+  </body>
+</html>

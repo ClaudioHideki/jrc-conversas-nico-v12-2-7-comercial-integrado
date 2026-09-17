@@ -1897,6 +1897,115 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_163000) do
     t.index ["pipeline_id", "key"], name: "index_jrc_crm_stages_on_pipeline_id_and_key", unique: true
   end
 
+  create_table "jrc_flow_connections", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "public_id", null: false
+    t.string "name", null: false
+    t.string "base_url", null: false
+    t.bigint "remote_account_id", null: false
+    t.bigint "bot_id"
+    t.bigint "dashboard_app_id"
+    t.boolean "enabled", default: false, null: false
+    t.jsonb "inbox_ids", default: [], null: false
+    t.jsonb "catalog", default: {}, null: false
+    t.text "credential_ciphertext"
+    t.datetime "verified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "base_url", "remote_account_id"], name: "idx_jrc_connection_destination", unique: true
+    t.index ["account_id"], name: "index_jrc_flow_connections_on_account_id"
+    t.index ["public_id"], name: "index_jrc_flow_connections_on_public_id", unique: true
+  end
+
+  create_table "jrc_flow_remote_events", force: :cascade do |t|
+    t.bigint "connection_id", null: false
+    t.string "event_key", null: false
+    t.text "payload_ciphertext", null: false
+    t.string "status", default: "queued", null: false
+    t.datetime "claimed_at"
+    t.string "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["connection_id", "event_key"], name: "idx_jrc_remote_event_dedup", unique: true
+    t.index ["connection_id"], name: "index_jrc_flow_remote_events_on_connection_id"
+    t.index ["status", "created_at"], name: "index_jrc_flow_remote_events_on_status_and_created_at"
+  end
+
+  create_table "jrc_flow_remote_sessions", force: :cascade do |t|
+    t.bigint "connection_id", null: false
+    t.bigint "flow_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "inbox_id", null: false
+    t.integer "flow_version", null: false
+    t.string "status", default: "ready", null: false
+    t.string "node_id"
+    t.jsonb "variables", default: {}, null: false
+    t.jsonb "trace", default: [], null: false
+    t.integer "steps", default: 0, null: false
+    t.bigint "last_message_id", default: 0, null: false
+    t.datetime "wake_at"
+    t.datetime "claimed_at"
+    t.datetime "finished_at"
+    t.string "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["connection_id", "conversation_id"], name: "idx_jrc_remote_session_identity", unique: true
+    t.index ["connection_id"], name: "index_jrc_flow_remote_sessions_on_connection_id"
+    t.index ["flow_id"], name: "index_jrc_flow_remote_sessions_on_flow_id"
+  end
+
+  create_table "jrc_flow_runs", force: :cascade do |t|
+    t.bigint "flow_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.string "event_key", null: false
+    t.string "status", default: "running", null: false
+    t.string "node_id"
+    t.jsonb "graph", default: {}, null: false
+    t.jsonb "settings", default: {}, null: false
+    t.jsonb "variables", default: {}, null: false
+    t.jsonb "trace", default: [], null: false
+    t.bigint "last_message_id", default: 0, null: false
+    t.integer "steps", default: 0, null: false
+    t.integer "wake_version", default: 0, null: false
+    t.datetime "wake_at"
+    t.datetime "finished_at"
+    t.datetime "reset_at"
+    t.string "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_jrc_flow_runs_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_jrc_flow_runs_on_account_id"
+    t.index ["conversation_id"], name: "idx_jrc_one_live_flow_per_conversation", unique: true, where: "((status)::text = ANY ((ARRAY['running'::character varying, 'waiting'::character varying, 'delayed'::character varying])::text[]))"
+    t.index ["conversation_id"], name: "index_jrc_flow_runs_on_conversation_id"
+    t.index ["flow_id", "event_key"], name: "index_jrc_flow_runs_on_flow_id_and_event_key", unique: true
+    t.index ["flow_id"], name: "index_jrc_flow_runs_on_flow_id"
+    t.index ["status", "wake_at"], name: "index_jrc_flow_runs_on_status_and_wake_at"
+  end
+
+  create_table "jrc_flows", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "created_by_id"
+    t.string "name", null: false
+    t.text "description"
+    t.string "kind", default: "chatbot", null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "next_run_at"
+    t.jsonb "graph", default: {}, null: false
+    t.jsonb "settings", default: {}, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "engine", default: "native", null: false
+    t.text "source_ciphertext"
+    t.text "credential_ciphertext"
+    t.bigint "connection_id"
+    t.index ["account_id", "status"], name: "index_jrc_flows_on_account_id_and_status"
+    t.index ["account_id"], name: "index_jrc_flows_on_account_id"
+    t.index ["connection_id"], name: "index_jrc_flows_on_connection_id"
+    t.index ["created_by_id"], name: "index_jrc_flows_on_created_by_id"
+  end
+
   create_table "jrc_nico_commands", force: :cascade do |t|
     t.bigint "session_id", null: false
     t.uuid "request_id", null: false
@@ -2762,6 +2871,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_163000) do
   add_foreign_key "jrc_crm_proposals", "users", column: "owner_id"
   add_foreign_key "jrc_crm_stages", "accounts"
   add_foreign_key "jrc_crm_stages", "jrc_crm_pipelines", column: "pipeline_id"
+  add_foreign_key "jrc_flow_connections", "accounts"
+  add_foreign_key "jrc_flow_remote_events", "jrc_flow_connections", column: "connection_id"
+  add_foreign_key "jrc_flow_remote_sessions", "jrc_flow_connections", column: "connection_id"
+  add_foreign_key "jrc_flow_remote_sessions", "jrc_flows", column: "flow_id"
+  add_foreign_key "jrc_flow_runs", "accounts"
+  add_foreign_key "jrc_flow_runs", "conversations", on_delete: :cascade
+  add_foreign_key "jrc_flow_runs", "jrc_flows", column: "flow_id"
+  add_foreign_key "jrc_flows", "accounts"
+  add_foreign_key "jrc_flows", "jrc_flow_connections", column: "connection_id"
+  add_foreign_key "jrc_flows", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "jrc_nico_commands", "jrc_nico_notices", column: "source_notice_id", on_delete: :nullify
   add_foreign_key "jrc_nico_commands", "jrc_nico_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "jrc_nico_delegations", "accounts", on_delete: :cascade

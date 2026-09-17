@@ -95,6 +95,7 @@ module JrcCrm
     validate :lost_reason_required_when_lost
     validate :associations_belong_to_account
     after_save :ensure_primary_contact_link, if: :saved_change_to_contact_id?
+    after_update_commit :dispatch_flow_stage_change, if: :saved_change_to_stage_id?
 
     scope :open_deals, -> { where(status: 'open') }
     scope :won_deals, -> { where(status: 'won') }
@@ -141,6 +142,15 @@ module JrcCrm
     end
 
     private
+
+    def dispatch_flow_stage_change
+      return if Current.executed_by.is_a?(JrcFlowRun)
+
+      conversations.find_each do |conversation|
+        JrcFlows::DispatchJob.perform_later(account_id, conversation.id, 'stage_changed',
+          "deal:#{id}:#{stage_id}:#{updated_at.to_f}:#{conversation.id}", nil, stage_id.to_s)
+      end
+    end
 
     def lost_reason_required_when_lost
       if status == 'lost' && lost_reason_id.blank? && lost_reason_note.blank?
