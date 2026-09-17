@@ -24,4 +24,4 @@ Integrações com Chatwoot de terceiros e o portal externo de Flows são beta. E
 4. Verificar migrações, permissões, execução nativa, sandbox, frontend e contratos Broker.
 5. Entregar procedimento Dokploy com backup, migração, ativação por conta e rollback.
 
-O resultado da validação e os comandos de instalação são registrados em `docs/DEPLOY-FLOWS-BROKER.md`. Preparação local não significa publicação no GitHub/GHCR nem atualização do servidor.
+Os candidatos foram enviados às branches `codex/jrc-flows-broker-release-20260917` no repositório JRC e `codex/broker-jrc-release-20260917` no Broker. O resultado da validação está em `docs/VALIDACAO-FLOWS-BROKER.md`; os comandos de instalação estão em `docs/DEPLOY-FLOWS-BROKER.md`. O main, o GHCR e o servidor não foram atualizados por esta entrega para revisão.
