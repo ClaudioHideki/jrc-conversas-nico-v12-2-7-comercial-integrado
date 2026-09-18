@@ -124,7 +124,7 @@ class JrcFlows::WorkflowRunner
     @conversation.reload
     @flow.reload.status == 'active' && @flow.lock_version == @run.settings['_flow_version'] && JrcFlows::Access.enabled?(@run.account) &&
       @run.account.account_users.exists?(user_id: @flow.created_by_id, role: 'administrator') &&
-      @conversation.assignee_agent_bot_id.nil? &&
+      @conversation.assignee_agent_bot_id.nil? && !JrcFlows::Access.inbox_bot_owned?(@conversation) &&
       !(@run.settings.fetch('pause_on_agent', true) && @conversation.assignee_id.present?) &&
       !(@run.settings.fetch('pause_on_team', false) && @conversation.team_id.present?) &&
       !@conversation.messages.outgoing.where(sender_type: 'User', private: false).where('created_at > ?', @run.created_at).exists?

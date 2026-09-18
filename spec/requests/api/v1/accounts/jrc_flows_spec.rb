@@ -135,4 +135,31 @@ RSpec.describe 'JRC Flows access and execution', type: :request do
     expect(delivered).to be(false)
     expect(reply.reload.content_attributes['jrc_flow_delivery']).to eq('cancelled')
   end
+
+  it 'does not start a native flow when an inbox Agent Bot owns the channel' do
+    flow.update!(status: 'active')
+    conversation = create(:conversation, account: account, inbox: inbox, assignee: nil)
+    create(:agent_bot_inbox, inbox: inbox, agent_bot: create(:agent_bot, account: account))
+    incoming = create(:message, conversation: conversation, account: account, message_type: :incoming, content: 'Teste sintético')
+    expect(conversation.reload.assignee_agent_bot_id).to be_nil
+    JrcFlows::DispatchJob.perform_now(account.id, conversation.id, 'message_created', "message:#{incoming.id}", incoming.id)
+    expect(flow.runs.count).to eq(0)
+  end
+
+  it 'pauses an existing native run and cancels its queued reply after a bot is attached to the inbox' do
+    flow.update!(status: 'active')
+    conversation = create(:conversation, account: account, inbox: inbox, assignee: nil)
+    incoming = create(:message, conversation: conversation, account: account, message_type: :incoming, content: 'Teste sintético')
+    JrcFlows::DispatchJob.perform_now(account.id, conversation.id, 'message_created', "message:#{incoming.id}", incoming.id)
+    run = flow.runs.last
+    reply = conversation.messages.outgoing.last
+    create(:agent_bot_inbox, inbox: inbox, agent_bot: create(:agent_bot, account: account))
+    answer = create(:message, conversation: conversation, account: account, message_type: :incoming, content: 'Ana')
+    JrcFlows::Runner.new(run.reload).perform(message: answer)
+    expect(run.reload.status).to eq('paused')
+    delivered = false
+    JrcFlows::Delivery.new(reply).perform { delivered = true }
+    expect(delivered).to be(false)
+    expect(reply.reload.content_attributes['jrc_flow_delivery']).to eq('cancelled')
+  end
 end

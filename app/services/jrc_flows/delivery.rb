@@ -40,6 +40,7 @@ class JrcFlows::Delivery
     run = JrcFlowRun.find_by(id: @message.content_attributes['jrc_flow_run_id'],
                             account_id: @message.account_id, conversation_id: @conversation.id)
     return false unless run && %w[running waiting delayed completed].include?(run.status)
+    return false if JrcFlows::Access.inbox_bot_owned?(@conversation)
     return false unless run.flow.status == 'active' && run.flow.lock_version == run.settings['_flow_version']
     return false unless JrcFlows::Access.enabled?(run.account) && run.account.account_users.exists?(user_id: run.flow.created_by_id, role: 'administrator')
     return false if @conversation.messages.outgoing.where(sender_type: 'User', private: false).where('id > ?', @message.id).exists?

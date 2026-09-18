@@ -1,5 +1,9 @@
 # JRC Conversas com Flows e Broker — candidato de 17/09/2026
 
+> Para o escopo ampliado de 18/09 — Flows também no Broker, Agent Bot e prioridade
+> de execução por caixa — leia [o complemento atual](DEPLOY-BROKER-OMNICHANNEL.md).
+> As restrições deste texto ao editor exclusivo no JRC são históricas.
+
 Esta versão concentra a criação e execução dos fluxos no **JRC Conversas**. O Broker gerencia organizações, instâncias e transporte de mensagens. O cliente trabalha no JRC; não precisa de n8n ou Typebot para executar os nós implementados no motor JRC.
 
 O portal para Chatwoot de terceiros permanece beta, desabilitado por padrão. O experimento de canvas no Broker não integra esta entrega. Este guia substitui, para esta versão, as propostas de servidor Flows independente em `deploy/flows/` e `docs/JRC_FLOWS_CHATWOOT_EXTERNO.md`.

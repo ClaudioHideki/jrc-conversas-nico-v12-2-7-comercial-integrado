@@ -47,7 +47,7 @@ class JrcFlows::DispatchJob < ApplicationJob
     return false unless flow.account.account_users.exists?(user_id: flow.created_by_id, role: 'administrator')
     return false if event == 'stage_changed' && settings['stage_id'].to_s != label.to_s
     return false unless Array(settings['inbox_ids']).map(&:to_i).include?(conversation.inbox_id)
-    return false if conversation.assignee_agent_bot_id.present?
+    return false if conversation.assignee_agent_bot_id.present? || JrcFlows::Access.inbox_bot_owned?(conversation)
     return false if settings.fetch('pause_on_agent', true) && conversation.assignee_id.present?
     return false if settings.fetch('pause_on_team', false) && conversation.team_id.present?
     return false if event == 'label_added' && settings['label'] != label

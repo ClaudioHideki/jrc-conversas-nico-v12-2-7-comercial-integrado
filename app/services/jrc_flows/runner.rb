@@ -65,7 +65,7 @@ class JrcFlows::Runner
   end
 
   def human_owned?
-    @conversation.assignee_agent_bot_id.present? ||
+    @conversation.assignee_agent_bot_id.present? || JrcFlows::Access.inbox_bot_owned?(@conversation) ||
       (@run.settings.fetch('pause_on_agent', true) && @conversation.assignee_id.present?) ||
       (@run.settings.fetch('pause_on_team', false) && @conversation.team_id.present?) ||
       @conversation.messages.outgoing.where(sender_type: 'User', private: false).where('created_at > ?', @run.created_at).exists?
