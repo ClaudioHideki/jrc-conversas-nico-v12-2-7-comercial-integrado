@@ -46,14 +46,11 @@ RSpec.describe 'JRC Broker account control', type: :request do
     end
   end
 
-  it 'requires inbox assignment and explicit grant, and removes authority on membership removal' do
+  it 'uses inbox membership for pairing and removes authority on membership removal' do
     headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-pair-intent')
     post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
     expect(response).to have_http_status(:forbidden)
     member = create(:inbox_member, inbox: inbox, user: agent)
-    post "#{inbox_url}/pair", headers: headers, params: {}, as: :json
-    expect(response).to have_http_status(:forbidden)
-    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
     result = { instance: { id: instance_id, status: 'CONNECTING' }, action: { type: 'NONE', reason: 'CONNECTION_PENDING' } }
     stub = stub_request(:post, "#{remote}/connections/#{connection_id}/pair")
            .with(headers: { 'X-JRC-External-Actor' => agent.id.to_s }).to_return(status: 200, body: result.to_json)
@@ -67,9 +64,8 @@ RSpec.describe 'JRC Broker account control', type: :request do
     expect(stub).to have_been_requested.once
   end
 
-  it 'does not expose admin actions to a delegated agent or allow a first or changed identity' do
+  it 'does not expose admin actions to an inbox member or allow a first or changed identity' do
     create(:inbox_member, inbox: inbox, user: agent)
-    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
     headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-pair-intent')
     get "#{inbox_url}/status", headers: headers
     expect(response.parsed_body['allowedActions']).to eq(%w[status pair])
@@ -117,11 +113,10 @@ RSpec.describe 'JRC Broker account control', type: :request do
     ActionController::Base.allow_forgery_protection = previous
   end
 
-  it 'does not release a pairing code when its grant is removed during the remote call' do
-    create(:inbox_member, inbox: inbox, user: agent)
-    grant = JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+  it 'does not release a pairing code when inbox membership is removed during the remote call' do
+    member = create(:inbox_member, inbox: inbox, user: agent)
     stub_request(:post, "#{remote}/connections/#{connection_id}/pair").to_return do
-      grant.destroy!
+      member.destroy!
       { status: 200, body: { instance: { id: instance_id }, action: { type: 'PAIRING_CODE', code: 'SYNTHETIC',
                                                                       expiresAt: 30.seconds.from_now.iso8601 } }.to_json }
     end
@@ -181,20 +176,19 @@ RSpec.describe 'JRC Broker account control', type: :request do
     expect(stub).to have_been_requested.once
   end
 
-  it 'keeps an agent grant scoped to one inbox even when assigned to two inboxes' do
+  it 'keeps an agent membership scoped to its inbox' do
     second = create(:channel_api, account: account).inbox
     second_connection = SecureRandom.uuid
     second_instance = SecureRandom.uuid
     JrcBrokerInboxBinding.create!(account: account, inbox: second, integration_id: second_connection, instance_id: second_instance)
-    [inbox, second].each { |value| create(:inbox_member, inbox: value, user: agent) }
-    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    create(:inbox_member, inbox: inbox, user: agent)
     stub_request(:get, "#{remote}/connections/#{second_connection}/status")
       .to_return(status: 200, body: health.merge(inboxId: second.id, integrationId: second_connection, instanceId: second_instance).to_json)
     headers = agent.create_new_auth_token.merge('Idempotency-Key' => 'synthetic-second-inbox')
     get "#{inbox_url}/status", headers: headers
     expect(response.parsed_body['allowedActions']).to include('pair')
     get "#{prefix}/inboxes/#{second.id}/status", headers: headers
-    expect(response.parsed_body['allowedActions']).to eq(['status'])
+    expect(response).to have_http_status(:forbidden)
     post "#{prefix}/inboxes/#{second.id}/pair", headers: headers, params: {}, as: :json
     expect(response).to have_http_status(:forbidden)
     expect(a_request(:post, "#{remote}/connections/#{second_connection}/pair")).not_to have_been_made
