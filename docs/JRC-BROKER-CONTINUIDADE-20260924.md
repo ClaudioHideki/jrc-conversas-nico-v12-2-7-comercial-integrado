@@ -26,12 +26,12 @@ No QR assíncrono, apenas o clique inicia a intenção. Quando o Broker retorna 
 - `JrcBrokerIntegration` vincula uma conta a uma organização do Broker, com unicidade por origem/organização. O contexto remoto precisa confirmar accountId, organizationId, origem HTTPS e revisão.
 - `JrcBrokerInboxBinding` vincula uma inbox API dessa conta a integrationId/instanceId do Broker. Agentes são pessoas; instâncias são conexões WhatsApp e não substituem os agentes.
 - Não foi encontrado relacionamento pai/filhas entre contas. Grupo JRC, GoPure, Construtora e Operadora devem manter contas/organizações separadas para isolamento. Usuários de gestão do grupo precisam de associações explícitas; o grupo não herda acesso às empresas por nome ou vínculo CRM.
-- O enum base tem agent/administrator. Supervisor depende de custom_role no overlay Enterprise. A política Broker atual não concede gestão somente por esse rótulo: exige administrator; membros da caixa podem consultar/reconectar a identidade aprovada.
+- O enum base tem agent/administrator. Supervisor depende de custom_role no overlay Enterprise. A política Broker atual não concede gestão somente por esse rótulo: exige administrator. Membros da caixa consultam status; gerar QR/reconectar exige também concessão explícita can_pair e identidade aprovada. A concessão é revalidada depois da resposta remota; revogação durante o pedido impede revelar o código.
 - A presença do módulo depende das features jrc_broker/jrc_flows da conta e habilitação da infraestrutura. Disponibilização comercial para todas as empresas requer um fluxo de provisionamento por empresa; não compartilhar a chave da conta 1 com outras contas.
 
 ## Validação local desta revisão
 
-- Rails: 41 exemplos, zero falhas, incluindo adoção repetida, empresa distinta, usuário sem gestão, vínculo conflitante e conexão desabilitada.
+- Rails: 42 exemplos, zero falhas, incluindo adoção repetida, empresa distinta, usuário sem gestão, vínculo conflitante, conexão desabilitada e revogação de concessão durante o pareamento.
 - Vue: 25 testes, incluindo adoção sem onboarding e QR assíncrono com intenção estável; lint sem erros (avisos preexistentes de chaves i18n dinâmicas).
 - Broker: teste PostgreSQL de controle com 6 casos aprovado; typecheck aprovado. Suíte principal teve 1.230 aprovações e duas falhas; após corrigir o mock HTTP para o contrato novo, as duas suítes foram reexecutadas com 12 testes aprovados. A falha de espera do editor não se repetiu na reexecução isolada. Não foi uma única execução integral verde.
 - LAB indicado pelo usuário: conta 1 em jrcconversas-lab.jrcws.cloud. A ferramenta de navegador falhou ao inicializar; não houve validação da sessão, pareamento ou mensagens reais.
