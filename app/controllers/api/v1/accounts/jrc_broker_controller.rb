@@ -25,13 +25,22 @@ class Api::V1::Accounts::JrcBrokerController < Api::V1::Accounts::BaseController
 
   def resources
     data = broker.client.resources
+    connections = data.fetch('connections', [])
+    inbox_ids = Current.account.inboxes.where(id: connections.pluck('inboxId'), channel_type: 'Channel::Api').pluck(:id)
     render json: { providers: data.fetch('providers').map { |value| value.slice('id', 'name') },
+                   connections: connections.select { |value| inbox_ids.include?(value['inboxId']) }
+                                    .map { |value| value.slice('integrationId', 'inboxId', 'name') },
                    instances: data.fetch('instances').map { |value| value.slice('id', 'name', 'status') },
                    agents: Current.account.users.select(:id, :name).map { |user| { id: user.id, name: user.name } } }
   end
 
   def onboardings
     render json: { data: broker.client.operations.fetch('data').map { |value| JrcBroker::Response.operation(value) } }
+  end
+
+  def adopt
+    input = body!('integrationId')
+    render json: broker.adopt!(input['integrationId'])
   end
 
   def create_onboarding

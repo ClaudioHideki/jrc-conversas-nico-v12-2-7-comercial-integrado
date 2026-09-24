@@ -36,6 +36,21 @@ afterEach(() => {
 });
 
 describe('native pairing lifecycle', () => {
+  it('retrieves an asynchronous QR using the same intent and stops after receiving it', async () => {
+    api.pair.mockResolvedValueOnce({
+      action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+    });
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(api.pair).toHaveBeenCalledTimes(2);
+    expect(api.pair.mock.calls[1][1]).toBe(api.pair.mock.calls[0][1]);
+    expect(wrapper.text()).toContain('ABCD-1234');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(api.pair).toHaveBeenCalledTimes(2);
+  });
   it('suspends polling while hidden and clears the code on logout', async () => {
     const store = createStore({ mutations: { LOGOUT: () => {} } });
     wrapper = mount(ConnectionPanel, {

@@ -152,6 +152,7 @@ Rails.application.routes.draw do
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           resource :jrc_broker, only: [:show, :update], controller: 'jrc_broker' do
             get :resources
+            post :adopt
             get :onboarding, action: :onboardings
             post :onboarding, action: :create_onboarding
             get 'onboarding/:operation_id', action: :onboarding

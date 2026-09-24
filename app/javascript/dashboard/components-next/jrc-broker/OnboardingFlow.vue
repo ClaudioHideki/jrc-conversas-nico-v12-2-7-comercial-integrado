@@ -11,6 +11,7 @@ const resources = ref(null);
 const operations = ref([]);
 const operation = ref(null);
 const bindingReady = ref(false);
+const adoptedInbox = ref(null);
 const name = ref('');
 const source = ref('EXISTING');
 const instanceId = ref('');
@@ -137,6 +138,19 @@ const newSetup = () => {
     error.value = 'UNAVAILABLE';
   });
 };
+const adopt = async integrationId => {
+  if (busy.value) return;
+  busy.value = true;
+  error.value = '';
+  try {
+    const result = await api.adopt(integrationId, controller.signal);
+    if (!disposed) adoptedInbox.value = result.inboxId;
+  } catch {
+    if (!disposed) error.value = 'INVALID_SETUP';
+  } finally {
+    if (!disposed) busy.value = false;
+  }
+};
 const visibility = () => {
   clearTimeout(timer);
   if (!document.hidden) poll();
@@ -165,6 +179,24 @@ onBeforeUnmount(() => {
 <template>
   <section class="flex flex-col gap-5">
     <p v-if="error" role="alert">{{ t(`JRC_BROKER.ERROR.${error}`) }}</p>
+    <ConnectionPanel
+      v-if="adoptedInbox"
+      :account-id="accountId"
+      :inbox-id="adoptedInbox"
+    />
+    <section
+      v-if="!operation && resources?.connections?.length"
+      class="flex flex-col gap-3"
+    >
+      <p>{{ t('JRC_BROKER.ADOPT_HELP') }}</p>
+      <Button
+        v-for="connection in resources.connections"
+        :key="connection.integrationId"
+        :label="t('JRC_BROKER.ADOPT', { name: connection.name })"
+        :disabled="busy"
+        @click="adopt(connection.integrationId)"
+      />
+    </section>
     <template v-if="operation">
       <div
         class="rounded-xl border border-n-weak p-5 flex flex-col gap-3"
@@ -298,8 +330,8 @@ onBeforeUnmount(() => {
         class="flex flex-wrap items-center justify-between gap-3 border border-n-weak p-3 rounded-lg"
       >
         <div class="flex gap-2">
-          <span>{{ t(`JRC_BROKER.STATUS.${value.state}`) }}</span
-          ><span>{{ value.operationId.slice(0, 8) }}</span>
+          <span>{{ t(`JRC_BROKER.STATUS.${value.state}`) }}</span>
+          <span>{{ value.operationId.slice(0, 8) }}</span>
         </div>
         <Button
           variant="outline"

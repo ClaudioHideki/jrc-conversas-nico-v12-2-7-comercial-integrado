@@ -1,5 +1,7 @@
 {
   "JRC_BROKER": {
+    "ADOPT_HELP": "Link an existing Broker inbox without recreating it or changing its conversation history.",
+    "ADOPT": "Link existing inbox: {name}",
     "CONNECT_WHATSAPP": "Connect your WhatsApp",
     "CONNECTIONS_HELP": "Check your inbox connection and scan its QR code without opening a conversation.",
     "REFRESH_CONNECTIONS": "Refresh inboxes",

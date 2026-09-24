@@ -18,6 +18,31 @@ beforeEach(() => {
 });
 afterEach(() => wrapper?.unmount());
 
+it('adopts an existing connection without creating an onboarding', async () => {
+  api.resources.mockResolvedValue({
+    providers: [],
+    instances: [],
+    agents: [],
+    connections: [
+      { integrationId: 'existing', name: 'Existing inbox', inboxId: 2 },
+    ],
+  });
+  api.adopt = vi.fn().mockResolvedValue({ inboxId: 2 });
+  wrapper = mount(OnboardingFlow, {
+    props: { accountId: 1 },
+    global: { stubs: { ConnectionPanel: true, RouterLink: true } },
+  });
+  await flushPromises();
+  await wrapper
+    .findAll('button')
+    .find(button => button.text().includes('Existing inbox'))
+    .trigger('click');
+  await flushPromises();
+  expect(api.adopt).toHaveBeenCalledWith('existing', expect.any(AbortSignal));
+  expect(api.create).not.toHaveBeenCalled();
+  expect(wrapper.find('connection-panel-stub').exists()).toBe(true);
+});
+
 it('waits for the Rails binding check before displaying a previously completed connection', async () => {
   const completed = {
     operationId: 'synthetic-operation',

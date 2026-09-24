@@ -35,6 +35,44 @@ RSpec.describe 'JRC Broker account control', type: :request do
     stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200, body: health.to_json)
   end
 
+  it 'adopts an existing API inbox idempotently without creating another inbox' do
+    JrcBrokerInboxBinding.where(account: account).delete_all
+    headers = admin.create_new_auth_token
+    2.times do
+      expect do
+        post "#{prefix}/adopt", headers: headers, params: { integrationId: connection_id }, as: :json
+      end.not_to change(Inbox, :count)
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['inboxId']).to eq(inbox.id)
+    end
+    expect(JrcBrokerInboxBinding.where(account: account).count).to eq(1)
+  end
+
+  it 'rejects adoption by agents and never adopts an inbox belonging to another account' do
+    post "#{prefix}/adopt", headers: agent.create_new_auth_token, params: { integrationId: connection_id }, as: :json
+    expect(response).to have_http_status(:forbidden)
+    other_inbox = create(:channel_api).inbox
+    stub_request(:get, "#{remote}/connections/#{connection_id}/status").to_return(status: 200, body: health.merge(inboxId: other_inbox.id).to_json)
+    post "#{prefix}/adopt", headers: admin.create_new_auth_token, params: { integrationId: connection_id }, as: :json
+    expect(response).to have_http_status(:not_found)
+    expect(JrcBrokerInboxBinding.find_by(inbox: other_inbox)).to be_nil
+  end
+
+  it 'preserves an existing binding and rejects an unready remote connection' do
+    original = JrcBrokerInboxBinding.find_by!(inbox: inbox)
+    other_id = SecureRandom.uuid
+    stub_request(:get, "#{remote}/connections/#{other_id}/status")
+      .to_return(status: 200, body: health.merge(integrationId: other_id).to_json)
+    post "#{prefix}/adopt", headers: admin.create_new_auth_token, params: { integrationId: other_id }, as: :json
+    expect(response).to have_http_status(:conflict)
+    expect(original.reload.integration_id).to eq(connection_id)
+    stub_request(:get, "#{remote}/connections/#{connection_id}/status")
+      .to_return(status: 200, body: health.merge(integrationStatus: 'DISABLED').to_json)
+    post "#{prefix}/adopt", headers: admin.create_new_auth_token, params: { integrationId: connection_id }, as: :json
+    expect(response).to have_http_status(:bad_gateway)
+    expect(original.reload.integration_id).to eq(connection_id)
+  end
+
   it 'rejects another account before calling the Broker and blocks the feature when disabled' do
     stranger = create(:user, account: create(:account), role: :administrator)
     get "#{inbox_url}/status", headers: stranger.create_new_auth_token

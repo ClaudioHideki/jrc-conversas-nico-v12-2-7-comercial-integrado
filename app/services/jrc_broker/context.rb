@@ -36,6 +36,20 @@ class JrcBroker::Context
     operation
   end
 
+  def adopt!(integration_id)
+    status = client.status(integration_id)
+    unless status['integrationId'] == integration_id && status['integrationStatus'] == 'READY' &&
+           JrcBroker::Client::UUID.match?(status['instanceId'].to_s)
+      raise JrcBroker::Client::Error, 'JRC_BROKER_INVALID_RESPONSE'
+    end
+
+    inbox = account.inboxes.find(status.fetch('inboxId'))
+    raise JrcBroker::Client::Error, 'JRC_BROKER_INVALID_RESPONSE' unless inbox.channel_type == 'Channel::Api'
+
+    save_binding!(inbox, status)
+    { inboxId: inbox.id, integrationId: integration_id }
+  end
+
   private
 
   def save_binding!(inbox, operation)

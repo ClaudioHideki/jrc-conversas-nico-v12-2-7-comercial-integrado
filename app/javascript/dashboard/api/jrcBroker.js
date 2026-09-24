@@ -32,6 +32,8 @@ export const createJrcBrokerApi = accountId => {
     configure: (data, signal) => request('patch', '', data, undefined, signal),
     resources: signal =>
       request('get', '/resources', undefined, undefined, signal),
+    adopt: (integrationId, signal) =>
+      request('post', '/adopt', { integrationId }, undefined, signal),
     operations: signal =>
       request('get', '/onboarding', undefined, undefined, signal),
     create: (data, key, signal) =>

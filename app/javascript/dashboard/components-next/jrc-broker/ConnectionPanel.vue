@@ -36,11 +36,32 @@ let stopped = false;
 let failures = 0;
 let latestPoll = 0;
 let confirmationRevision;
+let pendingPair;
 
 const clearCode = () => {
+  pendingPair = null;
   clearTimeout(expiryTimer);
   action.value = null;
 };
+
+const acceptPair = (result, key) => {
+  if (isPairingActionUsable(result.action, Date.now())) {
+    pendingPair = null;
+    action.value = result.action;
+    expiryTimer = setTimeout(
+      () => {
+        clearCode();
+        expired.value = true;
+      },
+      Date.parse(result.action.expiresAt) - Date.now()
+    );
+  } else if (result.action?.reason === 'CONNECTION_PENDING') {
+    pendingPair ||= { key, expiresAt: Date.now() + 60000 };
+  } else {
+    pendingPair = null;
+  }
+};
+
 const stop = () => {
   generation += 1;
   stopped = true;
@@ -82,6 +103,16 @@ const poll = async () => {
       !actions.value.includes('pair')
     )
       clearCode();
+    if (pendingPair && Date.now() >= pendingPair.expiresAt) {
+      pendingPair = null;
+      expired.value = true;
+    }
+    if (pendingPair && !busy.value) {
+      const key = pendingPair.key;
+      const pairing = await api.pair(props.inboxId, key, controller.signal);
+      if (current !== generation || pollVersion !== latestPoll) return;
+      acceptPair(pairing, key);
+    }
   } catch (failure) {
     if (current !== generation || pollVersion !== latestPoll) return;
     failures += 1;
@@ -126,16 +157,7 @@ const mutate = async kind => {
           )
         : await api[kind](props.inboxId, key, controller.signal);
     if (current !== generation) return;
-    if (kind === 'pair' && isPairingActionUsable(result.action, Date.now())) {
-      action.value = result.action;
-      expiryTimer = setTimeout(
-        () => {
-          clearCode();
-          expired.value = true;
-        },
-        Date.parse(result.action.expiresAt) - Date.now()
-      );
-    }
+    if (kind === 'pair') acceptPair(result, key);
     confirm.value = '';
     approved.value = false;
     await poll();
