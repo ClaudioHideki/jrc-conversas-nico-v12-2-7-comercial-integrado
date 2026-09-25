@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('jrcSoftphoneDesktop', {
   openContact: payload => ipcRenderer.invoke('softphone:open-contact', payload),
   sendFloatingState: payload =>
     ipcRenderer.send('softphone:floating-state', payload),
+  requestFloatingState: () => ipcRenderer.send('softphone:floating-ready'),
   sendFloatingShutdownComplete: () =>
     ipcRenderer.send('softphone:floating-shutdown-complete'),
   onFloatingCommand: callback => {

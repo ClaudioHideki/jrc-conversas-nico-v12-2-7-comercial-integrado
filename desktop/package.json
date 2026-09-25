@@ -24,6 +24,7 @@
     "files": [
       "src/**/*.cjs",
       "floating/**/*",
+      "setup/**/*",
       "assets/tray.png",
       "package.json"
     ],

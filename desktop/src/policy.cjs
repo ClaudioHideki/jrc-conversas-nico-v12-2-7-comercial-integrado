@@ -7,17 +7,43 @@ const parseUrl = value => {
   }
 };
 
+function serverOrigin(value) {
+  if (typeof value !== 'string' || value.length > 2048)
+    throw new Error('Informe um endereço HTTPS válido, sem usuário ou senha.');
+  const input = value.trim();
+  const authority = /^https:\/\/([^/?#]+)/i.exec(input)?.[1];
+  const url = parseUrl(input);
+  if (
+    !authority ||
+    authority.includes('@') ||
+    /[\s\\]/u.test(input) ||
+    !url ||
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    !url.hostname ||
+    (!url.hostname.startsWith('[') &&
+      !url.hostname
+        .replace(/\.$/, '')
+        .split('.')
+        .every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label)))
+  )
+    throw new Error('Informe um endereço HTTPS válido, sem usuário ou senha.');
+  return url.origin;
+}
+
 function serverConfig({ argv, env, isPackaged, savedOrigin }) {
   const argument = argv.find(value => value.startsWith('--server-url='));
+  const development = !isPackaged && argv.includes('--development');
   const value =
+    (!development && savedOrigin) ||
     env.JRC_SOFTPHONE_URL ||
     argument?.slice('--server-url='.length) ||
     savedOrigin;
+  if (!value) return null;
   const url = parseUrl(value);
   const localDevelopment =
-    !isPackaged &&
-    argv.includes('--development') &&
-    ['localhost', '127.0.0.1', '[::1]'].includes(url?.hostname);
+    development && ['localhost', '127.0.0.1', '[::1]'].includes(url?.hostname);
   if (
     !url ||
     url.username ||
@@ -29,7 +55,10 @@ function serverConfig({ argv, env, isPackaged, savedOrigin }) {
       'Configure a URL HTTPS do JRC. HTTP é permitido somente no desenvolvimento local explícito.'
     );
   }
-  return { url: url.href, origin: url.origin, localDevelopment };
+  if (localDevelopment && url.protocol === 'http:')
+    return { url: url.href, origin: url.origin, localDevelopment: true };
+  const origin = serverOrigin(value);
+  return { url: origin, origin, localDevelopment: false };
 }
 
 function trustedUrl(value, origin) {
@@ -168,6 +197,12 @@ function floatingCommand(payload) {
       recordWithKeys(payload, ['action', 'number']) &&
       /^[0-9*#+()\-\s]{1,128}$/.test(payload.number)
     );
+  if (payload.action === 'setDestination')
+    return (
+      recordWithKeys(payload, ['action', 'number']) &&
+      typeof payload.number === 'string' &&
+      /^[0-9*#+()\-\s]{0,128}$/.test(payload.number)
+    );
   return (
     payload.action === 'transfer' &&
     recordWithKeys(payload, ['action', 'mode', 'destination']) &&
@@ -218,6 +253,7 @@ function notificationGate(now = Date.now) {
 }
 module.exports = {
   APP_ID,
+  serverOrigin,
   serverConfig,
   trustedUrl,
   trustedSender,

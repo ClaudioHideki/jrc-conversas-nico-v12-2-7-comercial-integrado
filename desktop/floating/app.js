@@ -21,7 +21,7 @@
   const render = () => {
     $('status').textContent = state.status;
     $('extension').textContent = `Ramal: ${state.extension || '—'}`;
-    $('remote').textContent = state.remote || '—';
+    $('remote').textContent = state.sessionActive ? state.remote || '—' : '—';
     $('duration').textContent = state.duration;
     let callState = 'Ramal não registrado';
     if (state.registered) callState = 'Pronto para ligar';
@@ -37,7 +37,7 @@
     $('dial-panel').classList.toggle('hidden', state.sessionActive);
     $('dial').disabled =
       !state.registered || !state.destination || state.sessionActive;
-    $('mute').textContent = state.muted ? 'Desmudo' : 'Mudo';
+    $('mute').textContent = state.muted ? 'Ativar microfone' : 'Mudo';
     $('hold').textContent = state.held ? 'Retomar' : 'Espera';
     $('mute').disabled = !state.established || state.held || state.holdPending;
     $('hold').disabled =
@@ -46,11 +46,16 @@
       button.disabled =
         (state.sessionActive && !state.established) || state.transferring;
     });
+    document.querySelectorAll('[data-transfer]').forEach(button => {
+      button.disabled =
+        !state.established || state.holdPending || state.transferring;
+    });
     $('error').textContent = state.errorMessage;
     $('error').classList.toggle('hidden', !state.errorMessage);
   };
   $('destination').addEventListener('input', event => {
     state.destination = event.target.value;
+    command({ action: 'setDestination', number: state.destination });
     render();
   });
   $('dial').addEventListener('click', () =>
@@ -82,9 +87,9 @@
   );
   window.jrcSoftphoneDesktop.onFloatingState(next => {
     Object.assign(state, next);
-    if (!document.activeElement || document.activeElement !== $('destination'))
-      $('destination').value = state.destination;
+    $('destination').value = state.destination;
     render();
   });
   render();
+  window.jrcSoftphoneDesktop.requestFloatingState();
 })();

@@ -9,6 +9,8 @@ export default {
     ...base.test,
     include: [
       'app/javascript/dashboard/routes/dashboard/webphone/**/*.spec.js',
+      'app/javascript/dashboard/components-next/layout/SoftphoneDownload.spec.js',
+      'desktop/test/floating.integration.spec.js',
     ],
   },
 };

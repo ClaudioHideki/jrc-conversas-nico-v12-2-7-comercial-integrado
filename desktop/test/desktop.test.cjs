@@ -2,211 +2,11 @@
 // Native API fakes and sequential event/timer scenarios are intentionally colocated.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { EventEmitter } = require('node:events');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { startDesktop } = require('../src/main.cjs');
+const { harness } = require('./electronHarness.cjs');
 const policy = require('../src/policy.cjs');
-
-// Test the actual main-process handlers without starting Electron or touching userData.
-function harness({
-  lock = true,
-  isPackaged = true,
-  emptyIcon = false,
-  failLoad = false,
-} = {}) {
-  const windows = [];
-  const notices = [];
-  const opened = [];
-  const saved = [];
-  const errors = [];
-  const pendingTimers = new Map();
-  let timerId = 0;
-  const app = new EventEmitter();
-  Object.assign(app, {
-    isPackaged,
-    quits: 0,
-    readyCalls: 0,
-    requestSingleInstanceLock: () => lock,
-    setAppUserModelId: id => {
-      app.appId = id;
-    },
-    whenReady: () => {
-      app.readyCalls += 1;
-      return Promise.resolve();
-    },
-    quit: () => {
-      app.quits += 1;
-      app.emit('before-quit');
-    },
-    exit: () => {
-      app.exits = (app.exits || 0) + 1;
-    },
-    getPath: () => '/mock-user-data',
-    getLoginItemSettings: () => ({ openAtLogin: false }),
-    setLoginItemSettings: settings => {
-      app.loginSettings = settings;
-    },
-  });
-  class Window extends EventEmitter {
-    constructor(options) {
-      super();
-      this.options = options;
-      this.actions = [];
-      this.minimized = false;
-      this.webContents = new EventEmitter();
-      Object.assign(this.webContents, {
-        mainFrame: { url: 'https://jrc.example/app' },
-        getURL: () => this.webContents.mainFrame.url,
-        send: (...args) => {
-          this.webContents.sent = [...(this.webContents.sent || []), args];
-        },
-        setWindowOpenHandler: handler => {
-          this.openHandler = handler;
-        },
-        session: {
-          setPermissionCheckHandler: handler => {
-            this.checkPermission = handler;
-          },
-          setPermissionRequestHandler: handler => {
-            this.requestPermission = handler;
-          },
-        },
-      });
-      windows.push(this);
-    }
-
-    isDestroyed() {
-      return false;
-    }
-
-    isMinimized() {
-      return this.minimized;
-    }
-
-    restore() {
-      this.minimized = false;
-      this.actions.push('restore');
-    }
-
-    show() {
-      this.actions.push('show');
-    }
-
-    focus() {
-      this.actions.push('focus');
-    }
-
-    hide() {
-      this.actions.push('hide');
-    }
-
-    flashFrame(value) {
-      this.flash = value;
-    }
-
-    async loadURL(url) {
-      this.loads = (this.loads || 0) + 1;
-      this.loadedUrl = url;
-      if (failLoad) throw new Error('secret URL must not reach logs');
-    }
-
-    async loadFile(file) {
-      this.loadedFile = file;
-      this.webContents.mainFrame.url = `file://${file}`;
-    }
-  }
-  class Notice extends EventEmitter {
-    constructor(options) {
-      super();
-      this.options = options;
-      notices.push(this);
-    }
-
-    static isSupported() {
-      return true;
-    }
-
-    show() {
-      this.shown = true;
-    }
-
-    close() {
-      this.closed = true;
-    }
-  }
-  class Tray extends EventEmitter {
-    constructor() {
-      super();
-      app.tray = this;
-    }
-
-    setToolTip(value) {
-      this.tooltip = value;
-    }
-
-    setContextMenu(menu) {
-      this.menu = menu;
-    }
-
-    destroy() {
-      this.destroyed = true;
-    }
-  }
-  const ipcMain = new EventEmitter();
-  ipcMain.handle = (channel, handler) => {
-    ipcMain[channel] = handler;
-  };
-  const electron = {
-    app,
-    BrowserWindow: Window,
-    Notification: Notice,
-    Tray,
-    ipcMain,
-    Menu: { buildFromTemplate: items => items },
-    nativeImage: { createFromPath: () => ({ isEmpty: () => emptyIcon }) },
-    shell: {
-      openExternal: async url => {
-        opened.push(url);
-      },
-    },
-    dialog: { showErrorBox: (...args) => errors.push(args) },
-  };
-  const options = {
-    argv: ['electron', '--server-url=https://jrc.example/app?mode=a=b'],
-    env: {},
-    fileSystem: {
-      mkdirSync: () => {},
-      readFileSync: () => {
-        const error = new Error();
-        error.code = 'ENOENT';
-        throw error;
-      },
-      writeFileSync: (_path, data) => saved.push(JSON.parse(data)),
-    },
-    timers: {
-      setTimeout: (callback, delay) => {
-        timerId += 1;
-        const id = timerId;
-        pendingTimers.set(id, { callback, delay });
-        return id;
-      },
-      clearTimeout: id => pendingTimers.delete(id),
-    },
-  };
-  startDesktop(electron, options);
-  return {
-    app,
-    windows,
-    notices,
-    ipcMain,
-    opened,
-    saved,
-    errors,
-    pendingTimers,
-  };
-}
 
 test('second process exits before readiness/window creation', () => {
   const h = harness({ lock: false });
@@ -215,7 +15,7 @@ test('second process exits before readiness/window creation', () => {
   assert.equal(h.windows.length, 0);
 });
 
-test('preload exposes only three fixed channels and no Node APIs', async () => {
+test('preload exposes only fixed channels and no Node APIs', async () => {
   let bridge;
   const sent = [];
   vm.runInNewContext(
@@ -249,6 +49,7 @@ test('preload exposes only three fixed channels and no Node APIs', async () => {
     'onFloatingCommand',
     'onFloatingState',
     'openContact',
+    'requestFloatingState',
     'sendFloatingCommand',
     'sendFloatingShutdownComplete',
     'sendFloatingState',
@@ -315,14 +116,12 @@ test('production window isolation, background, identity and nonsecret startup co
   assert.equal(prefs.partition, 'jrc-softphone');
   assert.equal(prefs.backgroundThrottling, false);
   assert.equal(h.app.appId, 'br.com.jrcpabx.softphone');
-  assert.equal(win.loadedUrl, 'https://jrc.example/app?mode=a=b');
+  assert.equal(win.loadedUrl, 'https://jrc.example');
   assert.deepEqual(h.saved, [{ origin: 'https://jrc.example' }]);
   h.app.tray.menu
     .find(item => item.type === 'checkbox')
     .click({ checked: true });
-  assert.deepEqual(h.app.loginSettings.args, [
-    '--server-url=https://jrc.example',
-  ]);
+  assert.deepEqual(h.app.loginSettings.args, []);
 });
 
 test('server URL permits only HTTPS or explicitly local unpackaged development', () => {
@@ -600,7 +399,10 @@ test('floating control is local, relays commands to the one JRC renderer and nev
   assert.equal(floating.webContents.sent.at(-1)[1].extension, '101');
   h.ipcMain.emit(
     'softphone:floating-command',
-    { sender: floating.webContents },
+    {
+      sender: floating.webContents,
+      senderFrame: floating.webContents.mainFrame,
+    },
     { action: 'answer' }
   );
   assert.deepEqual(main.webContents.sent.at(-1), [
@@ -629,7 +431,7 @@ test('floating control is local, relays commands to the one JRC renderer and nev
   );
 });
 
-test('tray opens the registered idle softphone without creating another SIP renderer', async () => {
+test('first successful SIP registration opens idle softphone before any call and tray reopens it', async () => {
   const h = harness();
   await new Promise(resolve => {
     setImmediate(resolve);
@@ -656,10 +458,16 @@ test('tray opens the registered idle softphone without creating another SIP rend
     { sender: main.webContents, senderFrame: main.webContents.mainFrame },
     state
   );
-  assert.equal(h.windows.length, 1);
-  const menuItem = h.app.tray.menu.find(item => item.label === 'Abrir Softphone');
+  assert.equal(h.windows.length, 2);
+  h.windows[1].emit('ready-to-show');
+  assert.deepEqual(h.windows[1].actions.slice(-2), ['show', 'focus']);
+  h.windows[1].emit('close', { preventDefault() {} });
+  assert.equal(h.windows[1].actions.at(-1), 'hide');
+  const menuItem = h.app.tray.menu.find(
+    item => item.label === 'Abrir Softphone'
+  );
   assert.ok(menuItem);
-  menuItem.click();
+  menuItem.click(menuItem, main, {});
   const floating = h.windows[1];
   floating.emit('ready-to-show');
   assert.deepEqual(floating.webContents.sent.at(-1), [

@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef, watch } from 'vue';
+import { computed, effectScope, ref, shallowRef, watch } from 'vue';
 import SipCredentialsAPI from 'dashboard/api/sipCredentials';
 import { SipClient } from './SipClient';
 import { normalizeSipDialNumber } from './phoneNumber';
@@ -50,7 +50,8 @@ let retryNotBefore = 0;
 let disconnectRequested = false;
 let connectionVersion = 0;
 let networkListenersAttached = false;
-let floatingBridgeAttached = false;
+let floatingBridgeScope;
+let removeFloatingCommands;
 
 const extensionStorageKey = accountId =>
   `jrc-softphone-extension:${accountId}:enabled`;
@@ -167,6 +168,7 @@ const client = new SipClient({
     established.value = false;
     muted.value = false;
     held.value = false;
+    remoteNumber.value = '—';
     remoteStream.value = null;
     stopTimer();
   },
@@ -433,8 +435,11 @@ const pressKey = tone => {
 
 const floatingSnapshot = () => ({
   registered: registered.value,
-  status: status.value || '—',
-  extension: credential.value?.extension || '',
+  status:
+    registered.value && !sessionActive.value
+      ? 'Disponível / Registrado'
+      : status.value || '—',
+  extension: String(credential.value?.extension || ''),
   destination: destination.value || '',
   remote: remoteNumber.value || '—',
   duration: duration.value || '00:00',
@@ -459,6 +464,9 @@ const publishFloatingState = () => {
 const handleFloatingCommand = async command => {
   try {
     switch (command?.action) {
+      case 'setDestination':
+        if (!hasCall.value) destination.value = command.number;
+        break;
       case 'dial':
         destination.value = command.number;
         await call();
@@ -503,34 +511,41 @@ const handleFloatingCommand = async command => {
 };
 
 const attachFloatingBridge = () => {
-  if (floatingBridgeAttached || !window.jrcSoftphoneDesktop?.onFloatingCommand)
+  if (floatingBridgeScope || !window.jrcSoftphoneDesktop?.onFloatingCommand)
     return;
-  floatingBridgeAttached = true;
-  window.jrcSoftphoneDesktop.onFloatingCommand(handleFloatingCommand);
-  watch(
-    [
-      registered,
-      status,
-      credential,
-      destination,
-      remoteNumber,
-      duration,
-      incoming,
-      sessionActive,
-      established,
-      muted,
-      held,
-      holdPending,
-      transferring,
-      errorMessage,
-    ],
-    publishFloatingState,
-    { immediate: true }
+  removeFloatingCommands = window.jrcSoftphoneDesktop.onFloatingCommand(
+    handleFloatingCommand
+  );
+  // The bridge belongs to the singleton SIP session, not the first Vue view
+  // that happens to consume it. Navigation must not stop state delivery.
+  floatingBridgeScope = effectScope(true);
+  floatingBridgeScope.run(() =>
+    watch(
+      [
+        registered,
+        status,
+        credential,
+        destination,
+        remoteNumber,
+        duration,
+        incoming,
+        sessionActive,
+        established,
+        muted,
+        held,
+        holdPending,
+        transferring,
+        errorMessage,
+      ],
+      publishFloatingState,
+      { immediate: true }
+    )
   );
 };
 
 const initialize = accountId => {
   if (!accountId) return Promise.resolve();
+  attachFloatingBridge();
   attachNetworkListeners();
   if (initializationPromise && activeAccountId === accountId) {
     return initializationPromise;
@@ -595,6 +610,11 @@ async function shutdown() {
     credential.value = null;
     connecting.value = false;
     intentionalDisconnect = false;
+    publishFloatingState();
+    floatingBridgeScope?.stop();
+    floatingBridgeScope = undefined;
+    removeFloatingCommands?.();
+    removeFloatingCommands = undefined;
   }
 }
 
