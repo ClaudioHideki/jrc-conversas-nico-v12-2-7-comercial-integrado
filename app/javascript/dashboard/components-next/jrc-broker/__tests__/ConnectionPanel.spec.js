@@ -37,6 +37,22 @@ afterEach(() => {
 });
 
 describe('native pairing lifecycle', () => {
+  it('does not submit another pairing request after a response timeout without an operation ID', async () => {
+    api.pair.mockRejectedValueOnce(new Error('timeout'));
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('The result is uncertain');
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeDefined();
+    expect(wrapper.find('[data-testid="verify-pair-operation"]').exists()).toBe(
+      false
+    );
+    await vi.advanceTimersByTimeAsync(15000);
+    expect(api.pair).toHaveBeenCalledTimes(1);
+  });
   it('explains a conflict on a new pairing request without retrying it', async () => {
     api.pair.mockRejectedValueOnce({ response: { status: 409 } });
     wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
@@ -107,6 +123,91 @@ describe('native pairing lifecycle', () => {
       wrapper.get('[data-testid="pair"]').attributes('disabled')
     ).toBeUndefined();
     expect(api.pair).toHaveBeenCalledTimes(1);
+  });
+  it('requires a read-only check before an explicit new attempt after the operation becomes uncertain', async () => {
+    let operationState = 'PENDING';
+    const operationId = '11111111-1111-4111-8111-111111111111';
+    api.pair
+      .mockResolvedValueOnce({
+        operationId,
+        action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+      })
+      .mockRejectedValueOnce({ response: { status: 409 } });
+    api.pairOperation.mockImplementation(async () => ({
+      operationId,
+      state: operationState,
+      reconciliationRequired: operationState === 'UNKNOWN',
+    }));
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(61_000);
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeDefined();
+    expect(api.pair).toHaveBeenCalledTimes(1);
+
+    operationState = 'UNKNOWN';
+    await wrapper.get('[data-testid="verify-pair-operation"]').trigger('click');
+    await flushPromises();
+    expect(api.status).toHaveBeenCalled();
+    expect(api.pairOperation).toHaveBeenCalledWith(
+      2,
+      operationId,
+      expect.anything()
+    );
+    expect(api.pair).toHaveBeenCalledTimes(1);
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeUndefined();
+
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    expect(api.pair).toHaveBeenCalledTimes(2);
+    expect(api.pair.mock.calls[1][1]).not.toBe(api.pair.mock.calls[0][1]);
+    expect(wrapper.text()).toContain(
+      'The previous connection attempt needs review'
+    );
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeDefined();
+  });
+  it('finishes an explicit check even when a scheduled status read is already in flight', async () => {
+    let finishStatus;
+    let operationState = 'PENDING';
+    const operationId = '11111111-1111-4111-8111-111111111111';
+    api.pair.mockResolvedValueOnce({
+      operationId,
+      action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+    });
+    api.pairOperation.mockImplementation(async () => ({
+      operationId,
+      state: operationState,
+      reconciliationRequired: operationState === 'UNKNOWN',
+    }));
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(61_000);
+    api.status.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finishStatus = resolve;
+        })
+    );
+    document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+    operationState = 'UNKNOWN';
+    await wrapper.get('[data-testid="verify-pair-operation"]').trigger('click');
+    finishStatus({ ...health });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(api.pair).toHaveBeenCalledTimes(1);
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeUndefined();
   });
   it('displays a late one-time pairing code from one authorized operation read', async () => {
     let complete;

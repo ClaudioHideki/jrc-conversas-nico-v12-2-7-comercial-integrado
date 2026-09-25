@@ -22,6 +22,7 @@ const error = ref('');
 const busy = ref(false);
 const expired = ref(false);
 const pairingProgress = ref('');
+const checkedUnknown = ref(false);
 const confirm = ref('');
 const approved = ref(false);
 const actions = computed(() =>
@@ -51,15 +52,18 @@ let pollInFlight;
 let confirmationRevision;
 let pendingPair;
 let lastPairOperationId;
+let verifyRequested = false;
 
 const clearCode = () => {
   pendingPair = null;
   lastPairOperationId = null;
+  checkedUnknown.value = false;
   clearTimeout(expiryTimer);
   action.value = null;
 };
 
 const acceptPair = result => {
+  checkedUnknown.value = false;
   if (isPairingActionUsable(result.action, Date.now())) {
     pendingPair = null;
     pairingProgress.value = '';
@@ -91,6 +95,7 @@ const acceptPair = result => {
 const stop = () => {
   generation += 1;
   stopped = true;
+  verifyRequested = false;
   clearTimeout(timer);
   clearCode();
   pairingProgress.value = '';
@@ -115,6 +120,8 @@ const fail = failure => {
 const poll = async () => {
   clearTimeout(timer);
   if (stopped || document.hidden || pollInFlight === generation) return;
+  const manuallyChecking = verifyRequested;
+  verifyRequested = false;
   const current = generation;
   pollInFlight = current;
   latestPoll += 1;
@@ -139,9 +146,16 @@ const poll = async () => {
       clearCode();
       pairingProgress.value = '';
     }
+    if (manuallyChecking && lastPairOperationId && !pendingPair) {
+      pendingPair = {
+        operationId: lastPairOperationId,
+        expiresAt: Date.now() + 60000,
+      };
+    }
     if (pendingPair && Date.now() >= pendingPair.expiresAt) {
       pendingPair = null;
       pairingProgress.value = 'UNKNOWN';
+      checkedUnknown.value = false;
     }
     if (pendingPair && !busy.value) {
       const operationId = pendingPair.operationId;
@@ -155,7 +169,11 @@ const poll = async () => {
         acceptPair(progress);
       } else {
         if (progress.state !== 'PENDING') pendingPair = null;
-        pairingProgress.value = progress.state;
+        const uncertain =
+          progress.state === 'UNKNOWN' || progress.reconciliationRequired;
+        pairingProgress.value = uncertain ? 'UNKNOWN' : progress.state;
+        checkedUnknown.value =
+          manuallyChecking && uncertain && progress.state !== 'PENDING';
       }
     }
   } catch (failure) {
@@ -186,6 +204,8 @@ const verifyPairOperation = () => {
     operationId: lastPairOperationId,
     expiresAt: Date.now() + 60000,
   };
+  verifyRequested = true;
+  checkedUnknown.value = false;
   pairingProgress.value = 'PENDING';
   poll();
 };
@@ -193,6 +213,9 @@ const mutate = async kind => {
   if (
     busy.value ||
     stopped ||
+    (kind === 'pair' &&
+      (pairingProgress.value === 'PENDING' ||
+        (pairingProgress.value === 'UNKNOWN' && !checkedUnknown.value))) ||
     !actions.value.includes(kind === 'confirmIdentity' ? 'manage' : kind)
   )
     return;
@@ -203,6 +226,7 @@ const mutate = async kind => {
   )
     return;
   const current = generation;
+  const checkedOperationId = lastPairOperationId;
   busy.value = true;
   error.value = '';
   expired.value = false;
@@ -225,7 +249,15 @@ const mutate = async kind => {
     approved.value = false;
     await poll();
   } catch (failure) {
-    if (current === generation) fail(failure);
+    if (current === generation) {
+      if (kind === 'pair' && failure?.response?.status === 409) {
+        lastPairOperationId = checkedOperationId;
+        pairingProgress.value = 'UNKNOWN';
+      } else if (kind === 'pair' && !failure?.response) {
+        pairingProgress.value = 'UNKNOWN';
+      }
+      fail(failure);
+    }
   } finally {
     if (current === generation) busy.value = false;
   }
@@ -309,7 +341,9 @@ onBeforeUnmount(() => {
         v-if="actions.includes('pair')"
         data-testid="pair"
         :disabled="
-          busy || pairingProgress === 'PENDING' || pairingProgress === 'UNKNOWN'
+          busy ||
+          pairingProgress === 'PENDING' ||
+          (pairingProgress === 'UNKNOWN' && !checkedUnknown)
         "
         :label="t('JRC_BROKER.PAIR')"
         @click="mutate('pair')"
