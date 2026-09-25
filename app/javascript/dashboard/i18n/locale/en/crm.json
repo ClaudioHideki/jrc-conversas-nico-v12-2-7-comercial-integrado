@@ -102,6 +102,12 @@
       "LOADING": "Carregando métricas da equipe…",
       "FROM": "De (padrão: últimos 30 dias)",
       "TO": "Até"
+    },
+    "PROPOSAL_PDF": {
+      "DOWNLOAD": "Baixar PDF",
+      "LOADING": "Gerando PDF…",
+      "ERROR": "Não foi possível baixar o PDF. Tente novamente.",
+      "UNSAVED": "Salve as alterações antes de baixar o PDF. Se houve falha ao atualizar um produto, reabra a proposta e revise os dados primeiro."
     }
   }
 }
