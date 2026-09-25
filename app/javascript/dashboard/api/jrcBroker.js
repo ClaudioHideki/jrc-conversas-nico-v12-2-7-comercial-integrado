@@ -58,6 +58,14 @@ export const createJrcBrokerApi = accountId => {
       request('get', inboxPath(id, 'status'), undefined, undefined, signal),
     pair: (id, key, signal) =>
       request('post', inboxPath(id, 'pair'), {}, key, signal),
+    pairOperation: (id, operationId, signal) =>
+      request(
+        'get',
+        `${inboxPath(id, 'pair-operations')}/${encodeURIComponent(operationId)}`,
+        undefined,
+        undefined,
+        signal
+      ),
     disconnect: (id, key, signal) =>
       request('post', inboxPath(id, 'disconnect'), {}, key, signal),
     confirmIdentity: (id, observedRevision, key, signal) =>

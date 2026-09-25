@@ -58,6 +58,10 @@ class JrcBroker::Client
     request(:post, connection_path(id, 'pair'), body: {}, key: key)
   end
 
+  def pair_operation(id, operation_id)
+    request(:get, connection_path(id, "pair-operations/#{identifier!(operation_id)}"))
+  end
+
   def disconnect(id, key:)
     request(:post, connection_path(id, 'disconnect'), body: {}, key: key)
   end

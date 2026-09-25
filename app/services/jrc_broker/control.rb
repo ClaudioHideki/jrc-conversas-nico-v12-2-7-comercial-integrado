@@ -25,6 +25,13 @@ class JrcBroker::Control
     result
   end
 
+  def pair_operation(operation_id:)
+    authorize!(:pair)
+    result = JrcBroker::Response.pair_operation(context.client.pair_operation(@binding.integration_id, operation_id), operation_id)
+    authorize!(:pair) # A revoked grant must also hide progress returned by the remote request.
+    result
+  end
+
   def disconnect(key:)
     authorize!(:disconnect)
     context

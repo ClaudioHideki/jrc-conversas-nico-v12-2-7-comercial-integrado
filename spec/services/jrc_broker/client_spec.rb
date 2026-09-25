@@ -18,6 +18,19 @@ RSpec.describe JrcBroker::Client do
     expect(stub).to have_been_requested.once
   end
 
+  it 'reads pairing progress without replaying the pair mutation or adding a secret to the URL' do
+    operation_id = SecureRandom.uuid
+    stub = stub_request(:get, "#{origin}/v1/integrations/chatwoot/control/connections/#{connection_id}/pair-operations/#{operation_id}")
+           .with(headers: { 'X-JRC-API-Key' => 'synthetic-control-token', 'X-JRC-External-Actor' => '42' })
+           .to_return(status: 200, body: { operationId: operation_id, state: 'PENDING' }.to_json)
+
+    expect(client.pair_operation(connection_id, operation_id)).to include('state' => 'PENDING')
+    expect(stub).to have_been_requested.once
+    expect(a_request(:post, "#{origin}/v1/integrations/chatwoot/control/connections/#{connection_id}/pair")).not_to have_been_made
+    expect { client.pair_operation(connection_id, '../context') }
+      .to raise_error(described_class::Error, 'JRC_BROKER_INVALID_REQUEST')
+  end
+
   it 'rejects redirects and never forwards the credential to the destination' do
     stub_request(:get, "#{origin}/v1/integrations/chatwoot/control/context").to_return(status: 302,
                                                                                        headers: { Location: 'https://attacker.example.test' })

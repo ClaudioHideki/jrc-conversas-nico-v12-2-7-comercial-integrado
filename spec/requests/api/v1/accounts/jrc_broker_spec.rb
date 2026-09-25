@@ -105,6 +105,43 @@ RSpec.describe 'JRC Broker account control', type: :request do
     expect(stub).to have_been_requested.once
   end
 
+  it 'reads only durable pairing progress for an authorized inbox member without exposing QR data' do
+    create(:inbox_member, inbox: inbox, user: agent)
+    JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    operation_id = SecureRandom.uuid
+    stub = stub_request(:get, "#{remote}/connections/#{connection_id}/pair-operations/#{operation_id}")
+           .with(headers: { 'X-JRC-External-Actor' => agent.id.to_s })
+           .to_return(status: 200, body: { operationId: operation_id, state: 'PENDING', instanceStatus: 'CONNECTING',
+                                           reconciliationRequired: false, lastError: nil, updatedAt: Time.current.iso8601,
+                                           action: nil, providerSecret: 'NEVER-EXPOSE' }.to_json)
+
+    get "#{inbox_url}/pair-operations/#{operation_id}", headers: agent.create_new_auth_token
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body).to eq('operationId' => operation_id, 'state' => 'PENDING', 'reconciliationRequired' => false)
+    expect(response.headers['Cache-Control']).to eq('no-store')
+    expect(response.body).not_to include('NEVER-EXPOSE', 'synthetic-control')
+    expect(stub).to have_been_requested.once
+  end
+
+  it 'does not release pairing progress when the grant is revoked during the Broker request' do
+    create(:inbox_member, inbox: inbox, user: agent)
+    grant = JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)
+    operation_id = SecureRandom.uuid
+    stub_request(:get, "#{remote}/connections/#{connection_id}/pair-operations/#{operation_id}").to_return do
+      grant.destroy!
+      { status: 200, body: { operationId: operation_id, state: 'SUCCEEDED', instanceStatus: 'CONNECTING',
+                             reconciliationRequired: false, lastError: nil, updatedAt: Time.current.iso8601,
+                             action: { type: 'PAIRING_CODE', code: 'NEVER-EXPOSE',
+                                       expiresAt: 30.seconds.from_now.iso8601 } }.to_json }
+    end
+
+    get "#{inbox_url}/pair-operations/#{operation_id}", headers: agent.create_new_auth_token
+
+    expect(response).to have_http_status(:forbidden)
+    expect(response.body).not_to include('SUCCEEDED', 'NEVER-EXPOSE')
+  end
+
   it 'does not expose admin actions to an inbox member or allow a first or changed identity' do
     create(:inbox_member, inbox: inbox, user: agent)
     JrcBrokerInboxGrant.create!(account: account, inbox: inbox, user: agent, can_pair: true)

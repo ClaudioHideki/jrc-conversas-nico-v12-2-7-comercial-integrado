@@ -159,6 +159,7 @@ Rails.application.routes.draw do
             post 'onboarding/:operation_id/recover', action: :recover_onboarding
             get 'inboxes/:inbox_id/status', action: :status
             post 'inboxes/:inbox_id/pair', action: :pair
+            get 'inboxes/:inbox_id/pair-operations/:operation_id', action: :pair_operation
             post 'inboxes/:inbox_id/disconnect', action: :disconnect
             post 'inboxes/:inbox_id/confirm_identity', action: :confirm_identity
             get 'inboxes/:inbox_id/grants', action: :grants

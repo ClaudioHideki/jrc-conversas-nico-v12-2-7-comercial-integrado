@@ -20,3 +20,21 @@ it('loads inboxes from the authenticated Rails origin and retains the captured a
     signal,
   });
 });
+
+it('reads the pairing operation through the captured inbox and account without replaying a mutation', async () => {
+  const request = vi.fn().mockResolvedValue({ data: { state: 'PENDING' } });
+  vi.stubGlobal('axios', request);
+  const signal = new AbortController().signal;
+  await createJrcBrokerApi(7).pairOperation(
+    12,
+    '11111111-1111-4111-8111-111111111111',
+    signal
+  );
+  expect(request).toHaveBeenCalledWith({
+    method: 'get',
+    url: '/api/v1/accounts/7/jrc_broker/inboxes/12/pair-operations/11111111-1111-4111-8111-111111111111',
+    data: undefined,
+    signal,
+    headers: {},
+  });
+});

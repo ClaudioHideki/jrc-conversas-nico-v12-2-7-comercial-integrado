@@ -24,6 +24,13 @@
     "QR_ALT": "Temporary WhatsApp pairing QR code",
     "EXPIRED": "This code has expired. Request a new code when you are ready.",
     "PAIR": "Get connection code",
+    "PAIR_PROGRESS": {
+      "PENDING": "Preparing the connection. Checking progress…",
+      "SUCCEEDED": "The connection step finished without a reusable QR. Request a new code to continue.",
+      "FAILED": "The connection attempt failed. Check the inbox status, then request a new code.",
+      "UNKNOWN": "The result is uncertain. Check the connection state before another request and ask an administrator if it stays uncertain.",
+      "VERIFY": "Check this connection again"
+    },
     "DISCONNECT": "Disconnect WhatsApp",
     "CONFIRM_IDENTITY": "Confirm business number",
     "IDENTITY_WARNING": "Confirm that the WhatsApp number ending in {suffix} belongs to this inbox. A different number pauses delivery until an administrator approves it.",
@@ -60,6 +67,7 @@
     "ERROR": {
       "INVALID_SETUP": "The setup request was rejected. Check your access and the connection details before trying again.",
       "DENIED": "This action is no longer available. Ask your account administrator to check your access.",
+      "CONFLICT": "The previous connection attempt needs review. Check this inbox and ask an administrator to reconcile it before requesting another code.",
       "UNAVAILABLE": "Could not reach the Broker. The inbox and connection have been preserved. Try again shortly.",
       "CONFIGURATION": "Could not validate this configuration. Check the approved account, origin and control key."
     },

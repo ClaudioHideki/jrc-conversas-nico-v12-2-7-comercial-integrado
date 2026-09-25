@@ -4,7 +4,7 @@ class Api::V1::Accounts::JrcBrokerController < Api::V1::Accounts::BaseController
   before_action :no_store
   before_action :verify_control_csrf!
   before_action :reject_query!
-  before_action :authorize_management!, except: [:status, :pair, :disconnect, :confirm_identity]
+  before_action :authorize_management!, except: [:status, :pair, :pair_operation, :disconnect, :confirm_identity]
   rescue_from JrcBroker::Client::Error, with: :broker_error
   rescue_from JrcBroker::Configuration::InvalidConfiguration, JrcBroker::CredentialStore::InvalidCredential, with: :configuration_error
 
@@ -70,6 +70,10 @@ class Api::V1::Accounts::JrcBrokerController < Api::V1::Accounts::BaseController
   def pair
     body!
     render json: control.pair(key: idempotency_key!)
+  end
+
+  def pair_operation
+    render json: control.pair_operation(operation_id: params[:operation_id])
   end
 
   def disconnect

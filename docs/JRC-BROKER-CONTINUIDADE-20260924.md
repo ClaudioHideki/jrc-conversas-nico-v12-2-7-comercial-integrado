@@ -10,7 +10,9 @@ Esta revisão acrescenta a adoção de caixas já vinculadas no Broker e recuper
 
 O contrato `/control/resources` do Broker acrescenta `connections`, com integrationId, inboxId, instanceId e name. A interface do JRC mostra somente caixas API pertencentes à conta autenticada. A adoção usa `POST /api/v1/accounts/:account_id/jrc_broker/adopt` com `{integrationId}`; IDs de conta, empresa ou inbox não são aceitos como autoridade no corpo.
 
-No QR assíncrono, apenas o clique inicia a intenção. Quando o Broker retorna CONNECTION_PENDING, o painel recupera o resultado usando a mesma chave de idempotência, por até 60 segundos. Conexão, perda de permissão, troca de contexto ou saída interrompem a recuperação; QR não é persistido.
+No QR assíncrono, apenas o clique inicia a intenção. Quando o Broker retorna CONNECTION_PENDING, o painel consulta o ID da operação por GET, sem repetir o POST. O Broker pode devolver um desafio efêmero nessa leitura, uma única vez, enquanto válido; o Rails valida o formato e a validade do QR/código e revalida a permissão depois da resposta remota. A tela permite só uma consulta em voo para não consumir duas vezes o mesmo desafio. Conexão, perda de permissão, troca de contexto ou saída interrompem a recuperação. Se a operação terminar sem código visível, um novo código exige outro clique e uma nova chave de idempotência; estado UNKNOWN exige reconciliação antes de uma nova tentativa. O desafio não fica salvo no banco de longo prazo.
+
+O contrato conjunto é `GET /v1/integrations/chatwoot/control/connections/:integrationId/pair-operations/:operationId` no Broker, consultado somente pelo servidor Rails via `GET /api/v1/accounts/:accountId/jrc_broker/inboxes/:inboxId/pair-operations/:operationId`. O Broker exige o escopo `chatwoot:pair` e valida conexão/empresa; o Rails valida conta, caixa, participação e grant atual antes e depois da chamada. O retorno ao navegador exclui erro bruto do provedor e usa `Cache-Control: no-store`.
 
 ## Sequência obrigatória restante
 

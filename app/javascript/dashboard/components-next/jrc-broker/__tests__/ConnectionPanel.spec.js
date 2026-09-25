@@ -26,6 +26,7 @@ beforeEach(() => {
         expiresAt: '2030-01-01T00:00:10Z',
       },
     }),
+    pairOperation: vi.fn(),
   };
   createJrcBrokerApi.mockReturnValue(api);
 });
@@ -36,20 +37,134 @@ afterEach(() => {
 });
 
 describe('native pairing lifecycle', () => {
-  it('retrieves an asynchronous QR using the same intent and stops after receiving it', async () => {
+  it('explains a conflict on a new pairing request without retrying it', async () => {
+    api.pair.mockRejectedValueOnce({ response: { status: 409 } });
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain(
+      'The previous connection attempt needs review'
+    );
+    expect(api.pair).toHaveBeenCalledTimes(1);
+  });
+  it('checks asynchronous pairing by GET without repeating POST or promising a stored QR', async () => {
     api.pair.mockResolvedValueOnce({
+      operationId: '11111111-1111-4111-8111-111111111111',
       action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
     });
+    api.pairOperation
+      .mockResolvedValueOnce({
+        operationId: '11111111-1111-4111-8111-111111111111',
+        state: 'PENDING',
+      })
+      .mockResolvedValueOnce({
+        operationId: '11111111-1111-4111-8111-111111111111',
+        state: 'SUCCEEDED',
+      });
     wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
     await flushPromises();
     await wrapper.get('[data-testid="pair"]').trigger('click');
     await flushPromises();
     await vi.advanceTimersByTimeAsync(3000);
-    expect(api.pair).toHaveBeenCalledTimes(2);
-    expect(api.pair.mock.calls[1][1]).toBe(api.pair.mock.calls[0][1]);
-    expect(wrapper.text()).toContain('ABCD-1234');
+    expect(api.pair).toHaveBeenCalledTimes(1);
+    expect(api.pairOperation).toHaveBeenCalledWith(
+      2,
+      '11111111-1111-4111-8111-111111111111',
+      expect.anything()
+    );
+    expect(wrapper.text()).not.toContain('ABCD-1234');
     await vi.advanceTimersByTimeAsync(3000);
+    expect(wrapper.text()).toContain('Request a new code');
+    expect(api.pair).toHaveBeenCalledTimes(1);
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('ABCD-1234');
     expect(api.pair).toHaveBeenCalledTimes(2);
+    expect(api.pair.mock.calls[1][1]).not.toBe(api.pair.mock.calls[0][1]);
+  });
+  it('lets the user verify an uncertain operation without automatically starting another connection', async () => {
+    let resolved = false;
+    api.pair.mockResolvedValueOnce({
+      operationId: '11111111-1111-4111-8111-111111111111',
+      action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+    });
+    api.pairOperation.mockImplementation(async () => ({
+      operationId: '11111111-1111-4111-8111-111111111111',
+      state: resolved ? 'SUCCEEDED' : 'PENDING',
+    }));
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(61_000);
+    expect(wrapper.text()).toContain('The result is uncertain');
+    resolved = true;
+    await wrapper.get('[data-testid="verify-pair-operation"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Request a new code');
+    expect(
+      wrapper.get('[data-testid="pair"]').attributes('disabled')
+    ).toBeUndefined();
+    expect(api.pair).toHaveBeenCalledTimes(1);
+  });
+  it('displays a late one-time pairing code from one authorized operation read', async () => {
+    let complete;
+    api.pair.mockResolvedValueOnce({
+      operationId: '11111111-1111-4111-8111-111111111111',
+      action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+    });
+    api.pairOperation.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          complete = resolve;
+        })
+    );
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(3000);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+    expect(api.pairOperation).toHaveBeenCalledTimes(1);
+    complete({
+      operationId: '11111111-1111-4111-8111-111111111111',
+      state: 'SUCCEEDED',
+      action: {
+        type: 'PAIRING_CODE',
+        code: 'LATE-1234',
+        expiresAt: '2030-01-01T00:00:30Z',
+      },
+    });
+    await flushPromises();
+    expect(wrapper.text()).toContain('LATE-1234');
+    expect(api.pair).toHaveBeenCalledTimes(1);
+  });
+  it('continues polling the same operation after a temporary progress error', async () => {
+    api.pair.mockResolvedValueOnce({
+      operationId: '11111111-1111-4111-8111-111111111111',
+      action: { type: 'NONE', reason: 'CONNECTION_PENDING' },
+    });
+    api.pairOperation
+      .mockRejectedValueOnce({ response: { status: 503 } })
+      .mockResolvedValueOnce({
+        operationId: '11111111-1111-4111-8111-111111111111',
+        state: 'SUCCEEDED',
+        action: {
+          type: 'PAIRING_CODE',
+          code: 'LATE-1234',
+          expiresAt: '2030-01-01T00:00:30Z',
+        },
+      });
+    wrapper = mount(ConnectionPanel, { props: { accountId: 1, inboxId: 2 } });
+    await flushPromises();
+    await wrapper.get('[data-testid="pair"]').trigger('click');
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(9000);
+    expect(api.pairOperation).toHaveBeenCalledTimes(2);
+    expect(api.pair).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain('LATE-1234');
   });
   it('suspends polling while hidden and clears the code on logout', async () => {
     const store = createStore({ mutations: { LOGOUT: () => {} } });

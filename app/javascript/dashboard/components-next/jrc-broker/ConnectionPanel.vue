@@ -21,12 +21,24 @@ const action = ref(null);
 const error = ref('');
 const busy = ref(false);
 const expired = ref(false);
+const pairingProgress = ref('');
 const confirm = ref('');
 const approved = ref(false);
 const actions = computed(() =>
   visibleConnectionActions(health.value?.allowedActions)
 );
 const image = computed(() => pairingImage(action.value));
+const progressMessage = computed(() => {
+  if (pairingProgress.value === 'PENDING')
+    return t('JRC_BROKER.PAIR_PROGRESS.PENDING');
+  if (pairingProgress.value === 'SUCCEEDED')
+    return t('JRC_BROKER.PAIR_PROGRESS.SUCCEEDED');
+  if (pairingProgress.value === 'FAILED')
+    return t('JRC_BROKER.PAIR_PROGRESS.FAILED');
+  if (pairingProgress.value === 'UNKNOWN')
+    return t('JRC_BROKER.PAIR_PROGRESS.UNKNOWN');
+  return '';
+});
 let api;
 let controller;
 let generation = 0;
@@ -35,18 +47,22 @@ let expiryTimer;
 let stopped = false;
 let failures = 0;
 let latestPoll = 0;
+let pollInFlight;
 let confirmationRevision;
 let pendingPair;
+let lastPairOperationId;
 
 const clearCode = () => {
   pendingPair = null;
+  lastPairOperationId = null;
   clearTimeout(expiryTimer);
   action.value = null;
 };
 
-const acceptPair = (result, key) => {
+const acceptPair = result => {
   if (isPairingActionUsable(result.action, Date.now())) {
     pendingPair = null;
+    pairingProgress.value = '';
     action.value = result.action;
     expiryTimer = setTimeout(
       () => {
@@ -56,9 +72,19 @@ const acceptPair = (result, key) => {
       Date.parse(result.action.expiresAt) - Date.now()
     );
   } else if (result.action?.reason === 'CONNECTION_PENDING') {
-    pendingPair ||= { key, expiresAt: Date.now() + 60000 };
+    if (result.operationId) {
+      lastPairOperationId = result.operationId;
+      pendingPair = {
+        operationId: result.operationId,
+        expiresAt: Date.now() + 60000,
+      };
+      pairingProgress.value = 'PENDING';
+    } else {
+      pairingProgress.value = 'UNKNOWN';
+    }
   } else {
     pendingPair = null;
+    pairingProgress.value = '';
   }
 };
 
@@ -67,6 +93,7 @@ const stop = () => {
   stopped = true;
   clearTimeout(timer);
   clearCode();
+  pairingProgress.value = '';
   controller?.abort();
   health.value = null;
   busy.value = false;
@@ -74,15 +101,22 @@ const stop = () => {
   approved.value = false;
 };
 const fail = failure => {
-  clearCode();
   const denied = [401, 403, 404].includes(failure?.response?.status);
-  if (denied) stop();
-  error.value = denied ? 'DENIED' : 'UNAVAILABLE';
+  if (denied) {
+    stop();
+  } else {
+    clearTimeout(expiryTimer);
+    action.value = null;
+  }
+  if (denied) error.value = 'DENIED';
+  else if (failure?.response?.status === 409) error.value = 'CONFLICT';
+  else error.value = 'UNAVAILABLE';
 };
 const poll = async () => {
   clearTimeout(timer);
-  if (stopped || document.hidden) return;
+  if (stopped || document.hidden || pollInFlight === generation) return;
   const current = generation;
+  pollInFlight = current;
   latestPoll += 1;
   const pollVersion = latestPoll;
   try {
@@ -101,23 +135,35 @@ const poll = async () => {
     if (
       result.instanceStatus === 'CONNECTED' ||
       !actions.value.includes('pair')
-    )
+    ) {
       clearCode();
+      pairingProgress.value = '';
+    }
     if (pendingPair && Date.now() >= pendingPair.expiresAt) {
       pendingPair = null;
-      expired.value = true;
+      pairingProgress.value = 'UNKNOWN';
     }
     if (pendingPair && !busy.value) {
-      const key = pendingPair.key;
-      const pairing = await api.pair(props.inboxId, key, controller.signal);
+      const operationId = pendingPair.operationId;
+      const progress = await api.pairOperation(
+        props.inboxId,
+        operationId,
+        controller.signal
+      );
       if (current !== generation || pollVersion !== latestPoll) return;
-      acceptPair(pairing, key);
+      if (progress.action) {
+        acceptPair(progress);
+      } else {
+        if (progress.state !== 'PENDING') pendingPair = null;
+        pairingProgress.value = progress.state;
+      }
     }
   } catch (failure) {
     if (current !== generation || pollVersion !== latestPoll) return;
     failures += 1;
     fail(failure);
   } finally {
+    if (pollInFlight === current) pollInFlight = null;
     if (
       current === generation &&
       pollVersion === latestPoll &&
@@ -126,6 +172,22 @@ const poll = async () => {
     )
       timer = setTimeout(poll, Math.min(15000, 3000 * (failures + 1)));
   }
+};
+const verifyPairOperation = () => {
+  if (
+    stopped ||
+    busy.value ||
+    pendingPair ||
+    !lastPairOperationId ||
+    !actions.value.includes('pair')
+  )
+    return;
+  pendingPair = {
+    operationId: lastPairOperationId,
+    expiresAt: Date.now() + 60000,
+  };
+  pairingProgress.value = 'PENDING';
+  poll();
 };
 const mutate = async kind => {
   if (
@@ -145,6 +207,7 @@ const mutate = async kind => {
   error.value = '';
   expired.value = false;
   clearCode();
+  pairingProgress.value = '';
   try {
     const key = crypto.randomUUID();
     const result =
@@ -157,7 +220,7 @@ const mutate = async kind => {
           )
         : await api[kind](props.inboxId, key, controller.signal);
     if (current !== generation) return;
-    if (kind === 'pair') acceptPair(result, key);
+    if (kind === 'pair') acceptPair(result);
     confirm.value = '';
     approved.value = false;
     await poll();
@@ -240,13 +303,28 @@ onBeforeUnmount(() => {
       <span>{{ action.code }}</span>
     </output>
     <p v-if="expired" role="status">{{ t('JRC_BROKER.EXPIRED') }}</p>
+    <p v-if="progressMessage" role="status">{{ progressMessage }}</p>
     <div class="flex flex-wrap gap-3">
       <Button
         v-if="actions.includes('pair')"
         data-testid="pair"
-        :disabled="busy"
+        :disabled="
+          busy || pairingProgress === 'PENDING' || pairingProgress === 'UNKNOWN'
+        "
         :label="t('JRC_BROKER.PAIR')"
         @click="mutate('pair')"
+      />
+      <Button
+        v-if="
+          pairingProgress === 'UNKNOWN' &&
+          lastPairOperationId &&
+          actions.includes('pair')
+        "
+        data-testid="verify-pair-operation"
+        :disabled="busy"
+        variant="outline"
+        :label="t('JRC_BROKER.PAIR_PROGRESS.VERIFY')"
+        @click="verifyPairOperation"
       />
       <Button
         v-if="actions.includes('disconnect')"

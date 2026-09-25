@@ -9,6 +9,24 @@ class JrcBroker::Response
     value.slice(*OPERATION_FIELDS)
   end
 
+  def self.pair_operation(value, operation_id)
+    unless value['operationId'] == operation_id && %w[PENDING SUCCEEDED FAILED UNKNOWN].include?(value['state']) &&
+           [true, false].include?(value['reconciliationRequired'])
+      raise JrcBroker::Client::Error, 'JRC_BROKER_INVALID_RESPONSE'
+    end
+
+    result = value.slice('operationId', 'state', 'reconciliationRequired')
+    challenge = value['action']
+    if challenge
+      unless challenge.is_a?(Hash) && %w[QR_CODE PAIRING_CODE].include?(challenge['type'])
+        raise JrcBroker::Client::Error, 'JRC_BROKER_INVALID_RESPONSE'
+      end
+
+      result['action'] = action(challenge)
+    end
+    result
+  end
+
   def self.health(value, binding)
     valid = value.values_at('integrationId', 'inboxId', 'instanceId') == [binding.integration_id, binding.inbox_id, binding.instance_id]
     raise JrcBroker::Client::Error, 'JRC_BROKER_INVALID_RESPONSE' unless valid
