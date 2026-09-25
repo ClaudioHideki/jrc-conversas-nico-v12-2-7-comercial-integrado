@@ -276,11 +276,13 @@ Rails.application.routes.draw do
             end
           end
           namespace :crm do
-              resource :dashboard, only: :show, controller: :dashboards
-              resources :reports, only: :index
-              resources :leads, only: [:index, :show, :create, :update] do
-                post :from_conversation, on: :collection
-                member do
+            resource :dashboard, only: :show, controller: :dashboards
+            resources :reports, only: :index
+            resources :leads, only: [:index, :show, :create, :update] do
+              get :for_contact, on: :collection
+              post :from_contact, on: :collection
+              post :from_conversation, on: :collection
+              member do
                 post :convert
                 post :lose
               end
@@ -293,6 +295,7 @@ Rails.application.routes.draw do
                 post :lose
               end
             end
+            resources :management, only: [:index]
             resources :pipelines
             resources :stages do
               post :reorder, on: :collection
