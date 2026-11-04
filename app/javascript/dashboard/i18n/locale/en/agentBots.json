@@ -112,6 +112,11 @@
     },
     "TYPES": {
       "WEBHOOK": "Webhook bot"
+    },
+    "NATIVE_FLOW": {
+      "TITLE": "Broker native Flow",
+      "DESC": "Configure the chatbot in the integrated editor and bind its version to the inbox. Native execution does not require an external AgentBot.",
+      "OPEN": "Open Flow integration and editor"
     }
   }
 }

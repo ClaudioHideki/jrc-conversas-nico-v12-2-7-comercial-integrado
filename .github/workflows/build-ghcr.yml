@@ -1,7 +1,7 @@
 name: URA HML - JRC Conversas e Broker nativo
 
 concurrency:
-  group: gopure-campanhas-evolution-${{ github.ref }}
+  group: ura-nico-hml-${{ github.ref }}
   cancel-in-progress: true
 
 on:
@@ -18,11 +18,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: claudiohideki/jrcconversas-v12-2-6-gopure-layout-timezone-final-20260907
+  IMAGE_NAME: claudiohideki/jrc-conversas-nico-v12-2-7-comercial-integrado
 
 jobs:
   validate:
-    name: Validar GoPure e NICO
+    name: Validar Conversas comercial e NICO
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -52,6 +52,8 @@ jobs:
         ports: ['6379:6379']
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validar tag de publicação
         if: inputs.publish
         env:
@@ -277,6 +279,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Dependencias nativas
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev libvips-dev imagemagick poppler-utils tesseract-ocr tesseract-ocr-por tesseract-ocr-eng redis-server
       - uses: ruby/setup-ruby@v1
@@ -401,6 +404,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Dependencias nativas
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev libvips-dev
       - uses: ruby/setup-ruby@v1
@@ -414,7 +418,9 @@ jobs:
       - name: pnpm e lockfile imutavel
         run: corepack enable && pnpm install --frozen-lockfile
       - name: Contratos dos gates e migrations da release
-        run: node --test script/lab2_release_gates.test.mjs script/validate_migration_timestamps.test.mjs
+        run: |
+          node --test script/lab2_release_gates.test.mjs script/validate_migration_timestamps.test.mjs
+          node script/jrc_native_module_manifest.mjs
       - name: Preparar banco descartavel sem fontes externas
         run: |
           bundle exec rails db:schema:load
@@ -435,6 +441,23 @@ jobs:
             spec/services/jrc_flows spec/services/jrc_flow_effects spec/requests/jrc_flow*_spec.rb \
             --format progress --format json --out /tmp/broker-candidate-rspec.json
           ruby -rjson -e 'abort "Pending examples are not an approved gate" unless JSON.parse(File.read(ARGV.fetch(0))).fetch("summary").fetch("pending_count").zero?' /tmp/broker-candidate-rspec.json
+      - name: CSAT nativo, concorrencia e isolamento por conversa
+        env:
+          FRONTEND_URL: https://ura-hml-ci.example.test
+        run: |
+          bundle exec rspec spec/services/message_templates/template/csat_survey_spec.rb \
+            spec/services/csat_survey_service_concurrency_spec.rb spec/services/csat_survey_service_native_spec.rb \
+            spec/controllers/public/api/v1/csat_survey_controller_spec.rb \
+            spec/services/csat_survey_service_spec.rb spec/listeners/csat_survey_listener_spec.rb \
+            spec/listeners/csat_survey_listener_shared_survey_spec.rb spec/builders/csat_surveys/response_builder_spec.rb \
+            spec/enterprise/controllers/enterprise/api/v1/accounts/csat_survey_responses_controller_spec.rb \
+            spec/enterprise/policies/csat_survey_response_policy_spec.rb \
+            spec/controllers/api/v1/accounts/csat_survey_responses_controller_spec.rb spec/policies/csat_survey_response_policy_spec.rb \
+            spec/models/jrc_broker_webhook_obligation_spec.rb spec/services/jrc_broker/webhook_delivery_spec.rb \
+            --format progress --format json --out /tmp/ura-csat-rspec.json
+          ruby -rjson -e 'abort "Pending CSAT examples are not an approved gate" unless JSON.parse(File.read(ARGV.fetch(0))).fetch("summary").fetch("pending_count").zero?' /tmp/ura-csat-rspec.json
+      - name: Configuracao de fuso sem alterar TZ UTC da suite
+        run: bundle exec rspec spec/config/application_time_zone_spec.rb
       - name: Importador com S3 MinIO fisico isolado
         env:
           JRC_IMPORT_MINIO_ENDPOINT: http://127.0.0.1:19000
@@ -490,6 +513,7 @@ jobs:
           name: broker-import-candidate-results
           path: |
             /tmp/broker-candidate-rspec.json
+            /tmp/ura-csat-rspec.json
             /tmp/broker-import-minio-rspec.json
             /tmp/broker-import-minio.log
             /tmp/broker-first-worker.log

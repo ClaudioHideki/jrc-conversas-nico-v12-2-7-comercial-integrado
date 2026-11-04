@@ -1,0 +1,199 @@
+name: NICO e Broker - candidato coordenado
+
+on:
+  push:
+    branches: [main, codex/nico-broker-coordenado-20261015, codex/nico-jornada-candidato-20261016, codex/nico-chat-ux-20261019]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nico-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7.4.0-alpine@sha256:c35af3bbcef51a62c8bae5a9a563c6f1b60d7ebaea4cb5a3ccbcc157580ae098
+        ports: ['6379:6379']
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: '5432'
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: disposable-test-only
+      POSTGRES_DATABASE: jrc_nico_broker_candidate_test
+      JRC_NICO_GATE_CONCURRENCY: '1'
+      FRONTEND_URL: https://host.example.test
+      REDIS_URL: redis://127.0.0.1:6379/15
+      SECRET_KEY_BASE: isolated-nico-broker-ci-not-a-production-secret
+      BUNDLE_FROZEN: 'true'
+      SCHEMA: /tmp/nico-broker-candidate-schema.rb
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirmar branch e preservar a base de producao
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/codex/nico-broker-coordenado-20261015) baseline=b58e093dd3a32fe97829a4566660b83ee48b9eca ;;
+            refs/heads/main|refs/heads/codex/nico-jornada-candidato-20261016|refs/heads/codex/nico-chat-ux-20261019) baseline=98a4be7714be41d33bf9ff52b254ebb773864769 ;;
+            *) echo 'Branch fora das candidatas autorizadas'; exit 1 ;;
+          esac
+          git merge-base --is-ancestor "$baseline" HEAD
+          git diff --check "$baseline" HEAD
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - name: Interface NICO com dependencias congeladas
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec vitest run --config vitest.nico.config.ts --reporter=default --reporter=json --outputFile=/tmp/nico-broker-vitest.json
+          pnpm exec eslint app/javascript/dashboard/components-next/jrcCopilot/JrcCopilotPanel.vue app/javascript/dashboard/components-next/jrcCopilot/NicoAnalysisProvenance.vue app/javascript/dashboard/components-next/jrcCopilot/specs/nicoQuickUI.spec.js
+          node -e 'const r=require("/tmp/nico-broker-vitest.json");if(!r.success||r.numFailedTests||r.numPendingTests||r.numTotalTests<83)process.exit(1)'
+      - name: Mapa Customer360 e troca de Account
+        run: |
+          pnpm exec vitest run app/javascript/dashboard/routes/dashboard/jrcCustomers/components/RelationshipMapPanel.spec.js app/javascript/dashboard/routes/dashboard/jrcCustomers/useCustomerMaster.spec.js --maxWorkers=1 --minWorkers=1 --reporter=json --outputFile=/tmp/customer-relations-vitest.json
+          pnpm exec eslint app/javascript/dashboard/routes/dashboard/jrcCustomers/components/RelationshipMapPanel.vue app/javascript/dashboard/routes/dashboard/jrcCustomers/components/RelationshipMapPanel.spec.js
+          node -e 'const r=require("/tmp/customer-relations-vitest.json");if(!r.success||r.numFailedTests||r.numPendingTests||r.numTotalTests<8)process.exit(1)'
+      - name: Configuracao administrativa da distribuicao humana
+        run: |
+          pnpm exec vitest run app/javascript/dashboard/components-next/jrc-broker/__tests__/ConnectionsPage.spec.js app/javascript/dashboard/components-next/jrc-broker/specs/HumanAssignmentPolicy.spec.js --maxWorkers=1 --minWorkers=1
+          pnpm exec eslint app/javascript/dashboard/components-next/jrc-broker/HumanAssignmentPolicy.vue app/javascript/dashboard/components-next/jrcCopilot/nicoAsyncCompletion.js
+      - name: Dependencias nativas dos testes Rails
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev libvips libvips-dev
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.4'
+          bundler: 2.5.16
+          bundler-cache: true
+      - name: Preparar banco descartavel do candidato
+        run: |
+          test "$RAILS_ENV" = test
+          test "$POSTGRES_DATABASE" = jrc_nico_broker_candidate_test
+          SCHEMA=db/schema.rb bundle exec rails db:create db:schema:load
+          bundle exec rails db:migrate
+      - name: Historico silencioso e operacoes revisadas da carteira
+        env:
+          JRC_REVIEWED_CONCURRENCY: '1'
+        run: |
+          bundle exec rspec spec/requests/jrc_history_import_spec.rb \
+            spec/requests/jrc_domain_commands_spec.rb \
+            spec/requests/jrc_flow_effects_spec.rb \
+            spec/services/jrc_relationship/reviewed_portfolio_batch_spec.rb \
+            spec/services/jrc_relationship/reviewed_cadence_spec.rb \
+            spec/services/jrc_relationship/reviewed_batch_concurrency_spec.rb \
+            spec/services/jrc_relationship/reviewed_operations_upgrade_spec.rb \
+            spec/requests/api/v1/accounts/relationship/reviewed_batches_spec.rb \
+            --format progress --format json --out /tmp/reviewed-operations-rspec.json
+          python3 - <<'PYTHON'
+          import json
+          result = json.load(open('/tmp/reviewed-operations-rspec.json'))['summary']
+          assert result['failure_count'] == 0 and result['pending_count'] == 0
+          assert result['example_count'] >= 66
+          PYTHON
+      - name: Interface dos lotes e cadencias revisadas
+        run: |
+          pnpm exec vitest run app/javascript/dashboard/routes/dashboard/jrcRelationship/reviewedPortfolioBatch.spec.js app/javascript/dashboard/routes/dashboard/jrcRelationship/reviewedCadence.spec.js app/javascript/dashboard/routes/dashboard/jrcRelationship/nativeCompletions.spec.js app/javascript/dashboard/routes/dashboard/jrcRelationship/api.spec.js --maxWorkers=1 --minWorkers=1
+          pnpm exec eslint app/javascript/dashboard/api/jrcRelationship.js app/javascript/dashboard/routes/dashboard/jrcRelationship/ModulePage.vue app/javascript/dashboard/routes/dashboard/jrcRelationship/ReviewedPortfolioBatchPanel.vue app/javascript/dashboard/routes/dashboard/jrcRelationship/ReviewedCadencePanel.vue
+      - name: Conhecimento por empresa, limites e incerteza do NICO
+        run: |
+          bundle exec rspec spec/services/jrc_nico/bounded_workflow_knowledge_spec.rb spec/services/jrc_nico/run_capacity_spec.rb spec/services/jrc_nico/reservation_reconciler_spec.rb spec/services/jrc_nico/runtime_client_spec.rb spec/requests/jrc_nico_knowledge_spec.rb --format progress --format json --out /tmp/bounded-knowledge-rspec.json
+          python3 - <<'PYTHON'
+          import json
+          result = json.load(open('/tmp/bounded-knowledge-rspec.json'))['summary']
+          assert result['failure_count'] == 0 and result['pending_count'] == 0 and result['example_count'] >= 44
+          PYTHON
+      - name: Planejamento assincrono e distribuicao entre caixas
+        env:
+          JRC_SD_CONCURRENCY: '1'
+          DB_POOL_SIZE: '10'
+        run: |
+          bundle exec rspec spec/requests/jrc_nico_async_planning_spec.rb \
+            spec/requests/jrc_human_assignment_spec.rb \
+            spec/services/jrc_human_assignment \
+            spec/services/jrc_nico/runtime_connection_spec.rb \
+            spec/services/jrc_nico/helpdesk_tool_actions_native_spec.rb \
+            --format progress --format json --out /tmp/nico-stability-rspec.json
+          python3 - <<'PYTHON'
+          import json
+          result = json.load(open('/tmp/nico-stability-rspec.json'))['summary']
+          assert result['failure_count'] == 0 and result['pending_count'] == 0
+          assert result['example_count'] >= 30
+          PYTHON
+      - name: Voz interna do operador e cancelamento de contexto
+        run: |
+          pnpm exec vitest run app/javascript/dashboard/components-next/jrcCopilot/specs/nicoVoiceConversation.spec.js app/javascript/dashboard/components-next/jrcCopilot/specs/nicoVoiceInteraction.spec.js app/javascript/dashboard/components-next/jrcCopilot/specs/nicoVoice.spec.js --maxWorkers=1 --minWorkers=1
+          pnpm exec eslint app/javascript/dashboard/components-next/jrcCopilot/useNicoVoiceConversation.js app/javascript/dashboard/components-next/jrcCopilot/useNicoVoice.js app/javascript/dashboard/components-next/jrcCopilot/NicoComposer.vue app/javascript/dashboard/components-next/jrcCopilot/JrcCopilotPanel.vue
+      - name: Historico, ferramentas, confirmacao e delegacao NICO
+        run: |
+          bundle exec rspec spec/services/jrc_nico/operator_session_recent_history_spec.rb \
+            spec/services/jrc_ai/conversation_sentiment_spec.rb \
+            spec/services/jrc_nico/operator_session_broker_send_spec.rb \
+            spec/services/jrc_nico/broker_send_commit_gate_spec.rb \
+            spec/services/jrc_nico/broker_send_coordinator_binding_scope_spec.rb \
+            spec/services/jrc_nico/conversation_radar_spec.rb \
+            spec/services/jrc_nico/domain_actions_spec.rb \
+            spec/enterprise/services/enterprise/conversations/permission_filter_service_spec.rb \
+            spec/services/jrc_customers/customer360_relationship_map_spec.rb \
+            spec/services/jrc_customers/timeline_spec.rb \
+            spec/requests/api/v1/accounts/customer_relationships_spec.rb \
+            spec/services/jrc_nico/context_builder_spec.rb \
+            spec/services/jrc_nico/commercial_delegation_spec.rb \
+            spec/services/jrc_nico/commercial_workflow_spec.rb \
+            spec/jobs/send_reply_job_nico_composition_spec.rb \
+            spec/requests/jrc_nico_operations_spec.rb \
+            spec/requests/jrc_nico_assistance_spec.rb \
+            spec/requests/jrc_nico_notices_spec.rb \
+            spec/requests/api/v1/accounts/jrc_broker_spec.rb \
+            spec/requests/api/v1/accounts/jrc_broker_inbox_spec.rb \
+            spec/requests/api/v1/accounts/jrc_broker_contract_spec.rb \
+            --format progress --format json --out /tmp/nico-broker-rspec.json
+          python3 - <<'PYTHON'
+          import json
+          result = json.load(open('/tmp/nico-broker-rspec.json'))['summary']
+          print(result)
+          assert result['failure_count'] == 0
+          assert result['pending_count'] == 0
+          assert result['example_count'] >= 150
+          PYTHON
+      - name: Estilo dos arquivos novos de coordenacao
+        run: |
+          bundle exec rubocop app/services/jrc_domain_commands \
+            app/controllers/api/v1/accounts/jrc_domain_commands_controller.rb \
+            spec/requests/jrc_domain_commands_spec.rb
+          bundle exec rubocop app/models/jrc_nico/broker_send_operation.rb \
+            app/services/jrc_ai/conversation_sentiment.rb \
+            spec/services/jrc_ai/conversation_sentiment_spec.rb \
+            app/services/jrc_nico/broker_send_coordinator.rb \
+            app/services/jrc_nico/broker_send_cancellation.rb \
+            app/services/jrc_nico/broker_send_commit_gate.rb \
+            app/services/jrc_nico/broker_send_binding.rb \
+            app/services/jrc_nico/conversation_radar.rb \
+            spec/services/jrc_nico/conversation_radar_spec.rb \
+            app/services/jrc_customers/relationship_map.rb \
+            app/services/jrc_customers/visibility.rb \
+            spec/services/jrc_customers/customer360_relationship_map_spec.rb \
+            spec/requests/api/v1/accounts/customer_relationships_spec.rb \
+            app/jobs/jrc_nico/broker_send_job.rb \
+            db/migrate/20261015130000_create_nico_broker_send_operations.rb \
+            spec/services/jrc_nico/operator_session_broker_send_spec.rb \
+            spec/services/jrc_nico/broker_send_commit_gate_spec.rb \
+            spec/services/jrc_nico/broker_send_coordinator_binding_scope_spec.rb \
+            spec/jobs/send_reply_job_nico_composition_spec.rb
+      - name: Preservar o fonte e o lockfile
+        run: git diff --exit-code

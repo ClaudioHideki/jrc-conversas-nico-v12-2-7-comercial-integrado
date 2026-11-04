@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "scope": "candidate source evidence; final image results in release receipt",
+  "brokerRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+  "brokerCi": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+  "tests": [
+    {
+      "id": "T01",
+      "title": "Primeira entrada",
+      "automatedStatus": "APROVADO",
+      "evidence": "Uma saudação no motor; roteamento e sessão persistidos nas 26 rotas.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T02",
+      "title": "Cada opção",
+      "automatedStatus": "APROVADO",
+      "evidence": "26 rotas em PostgreSQL no CI; agente canônico sintético e bot pausado.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T03",
+      "title": "Entrada inválida",
+      "automatedStatus": "APROVADO",
+      "evidence": "Mensagem bilíngue/localizada, tentativas persistidas e saídas configuradas.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T04",
+      "title": "Captura e validação",
+      "automatedStatus": "APROVADO",
+      "evidence": "Gates existentes da plataforma; não prova campos de bots sem export.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T05",
+      "title": "Espera e timeout",
+      "automatedStatus": "APROVADO",
+      "evidence": "Menu V2 e captura: prazo, espera obsoleta e fronteiras no motor/CI.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T06",
+      "title": "Reinício durante captura",
+      "automatedStatus": "APROVADO",
+      "evidence": "Estado serializado e substituição do worker entre etapas persistidas.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T07",
+      "title": "Publicação de versão",
+      "automatedStatus": "APROVADO",
+      "evidence": "Regressões de pinning/versionamento da plataforma no CI.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T08",
+      "title": "Eventos repetidos/fora de ordem",
+      "automatedStatus": "APROVADO",
+      "evidence": "Deduplicação/ownership no CI; CSAT não repete o envio nem retoma URA.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T09",
+      "title": "Expediente",
+      "automatedStatus": "APROVADO",
+      "evidence": "Fronteiras do horário HML; Rails/Sidekiq reais em teste, UTC preservado. Horário do cliente não confirmado.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T10",
+      "title": "Transferência e fila",
+      "automatedStatus": "APROVADO",
+      "evidence": "26 casos persistidos + regressões de concorrência/incerteza; integração remota e recibos são sintéticos.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T11",
+      "title": "Resposta humana",
+      "automatedStatus": "APROVADO",
+      "evidence": "Gates de prioridade humana/transporte do Broker; sem prova de entrega pelo provedor nesta revisão.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T12",
+      "title": "Nota/eco/status/histórico",
+      "automatedStatus": "APROVADO",
+      "evidence": "Classificadores e controles de escopo no CI; não iniciam URA como texto de contato.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T13",
+      "title": "Retomada explícita",
+      "automatedStatus": "APROVADO",
+      "evidence": "Regressões existentes de retomada; oito retornos OIA no motor sem saudação.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T14",
+      "title": "Mídia usada pelo cliente",
+      "automatedStatus": "NAO_EXECUTADO",
+      "evidence": "Plataforma passa gates genéricos de mídia/bytes; formatos específicos dos bots dependem de seus artefatos.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T15",
+      "title": "Consulta/ação externa do cliente",
+      "automatedStatus": "NAO_EXECUTADO",
+      "evidence": "CI valida capacidades genéricas; capturas OIA não demonstram contrato ERP.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T16",
+      "title": "Isolamento e permissões",
+      "automatedStatus": "APROVADO",
+      "evidence": "1662 testes de integração incluem escopo, revogação e IDs locais coincidentes; testes de interface preservados.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T17",
+      "title": "Reconexão do número HML",
+      "automatedStatus": "BLOQUEADO",
+      "evidence": "Canal indicado não pertence à organização da sessão disponível; número/contato autorizados ainda não identificados.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T18",
+      "title": "Sem serviços legados",
+      "automatedStatus": "APROVADO",
+      "evidence": "Modelo/fixture rodam no Broker sem chamadas Typebot/Bridge/Budibase. Prova de tráfego da HML integrada pendente.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T19",
+      "title": "Interfaces e papéis",
+      "automatedStatus": "APROVADO",
+      "evidence": "Criação em rascunho nas duas interfaces; 94 testes de UI do Conversas. Papéis reais no ambiente integrado pendentes.",
+      "liveStatus": "BLOQUEADO"
+    },
+    {
+      "id": "T20",
+      "title": "Regressões e imagem final",
+      "automatedStatus": "NAO_EXECUTADO",
+      "evidence": "Broker: CI completo e imagens publicados. Conversas: três gates e smoke da imagem final serão registrados no recibo da release.",
+      "liveStatus": "BLOQUEADO"
+    }
+  ]
+}

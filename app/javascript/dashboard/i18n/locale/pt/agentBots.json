@@ -112,6 +112,11 @@
     },
     "TYPES": {
       "WEBHOOK": "Webhook bot"
+    },
+    "NATIVE_FLOW": {
+      "TITLE": "Flow nativo do Broker",
+      "DESC": "Configure a URA no editor integrado e vincule sua versão à caixa. A execução nativa não precisa de um AgentBot externo.",
+      "OPEN": "Abrir integração e editor de Flow"
     }
   }
 }

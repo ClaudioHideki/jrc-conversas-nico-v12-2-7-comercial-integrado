@@ -1,0 +1,532 @@
+{
+  "schemaVersion": 1,
+  "testPolicy": {
+    "names": "synthetic",
+    "maxAttempts": 3,
+    "timeoutSeconds": 300,
+    "schedule": "HML fixture, not confirmed production"
+  },
+  "routes": [
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "sales",
+      "departmentOption": "1",
+      "attendantOption": "1",
+      "canonicalPosition": "sales-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "sales",
+      "departmentOption": "1",
+      "attendantOption": "2",
+      "canonicalPosition": "sales-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "1",
+      "canonicalPosition": "operations-sp-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "2",
+      "canonicalPosition": "operations-sp-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "3",
+      "canonicalPosition": "operations-sp-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "4",
+      "canonicalPosition": "operations-sp-4",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "1",
+      "canonicalPosition": "operations-poa-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "2",
+      "canonicalPosition": "operations-poa-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "3",
+      "canonicalPosition": "operations-poa-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "4",
+      "canonicalPosition": "operations-poa-4",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "1",
+      "canonicalPosition": "finance-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "2",
+      "canonicalPosition": "finance-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "pt",
+      "languageOption": "1",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "3",
+      "canonicalPosition": "finance-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "sales",
+      "departmentOption": "1",
+      "attendantOption": "1",
+      "canonicalPosition": "sales-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "sales",
+      "departmentOption": "1",
+      "attendantOption": "2",
+      "canonicalPosition": "sales-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "1",
+      "canonicalPosition": "operations-sp-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "2",
+      "canonicalPosition": "operations-sp-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "3",
+      "canonicalPosition": "operations-sp-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-sp",
+      "departmentOption": "2",
+      "attendantOption": "4",
+      "canonicalPosition": "operations-sp-4",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "1",
+      "canonicalPosition": "operations-poa-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "2",
+      "canonicalPosition": "operations-poa-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "3",
+      "canonicalPosition": "operations-poa-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "operations-poa",
+      "departmentOption": "3",
+      "attendantOption": "4",
+      "canonicalPosition": "operations-poa-4",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "1",
+      "canonicalPosition": "finance-1",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "2",
+      "canonicalPosition": "finance-2",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    },
+    {
+      "language": "en",
+      "languageOption": "2",
+      "department": "finance",
+      "departmentOption": "4",
+      "attendantOption": "3",
+      "canonicalPosition": "finance-3",
+      "engineStatus": "APROVADO",
+      "engineEvidence": "BrokerJRCIA/apps/api/tests/unit/oia-visual-reconstruction.test.ts",
+      "effectiveRemoteAssignment": "NAO_EXECUTADO",
+      "whatsappObserved": false,
+      "parity": "PARCIAL_VISUAL",
+      "persistentFixtureStatus": "APROVADO",
+      "persistentFixtureEvidence": {
+        "sourceRevision": "2d30a5a544aa0eae12c208867e4912c369626787",
+        "ciRun": "https://github.com/ClaudioHideki/BrokerJRCIA/actions/runs/41856020646",
+        "testFile": "apps/api/tests/integration/native-handoff.test.ts",
+        "scope": "PostgreSQL + synthetic canonical integration + synthetic provider receipt"
+      }
+    }
+  ],
+  "physicalProviderEvidence": false
+}

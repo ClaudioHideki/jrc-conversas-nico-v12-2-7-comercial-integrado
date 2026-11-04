@@ -85,6 +85,20 @@ export default {
 
 <template>
   <div class="mx-6 max-w-4xl">
+    <SettingsFieldSection
+      :label="$t('AGENT_BOTS.NATIVE_FLOW.TITLE')"
+      :help-text="$t('AGENT_BOTS.NATIVE_FLOW.DESC')"
+    >
+      <router-link
+        :to="{
+          name: 'jrc_flows_native',
+          params: { accountId: $route.params.accountId },
+        }"
+        class="text-n-brand underline"
+      >
+        {{ $t('AGENT_BOTS.NATIVE_FLOW.OPEN') }}
+      </router-link>
+    </SettingsFieldSection>
     <LoadingState v-if="uiFlags.isFetching || uiFlags.isFetchingAgentBot" />
     <form v-else @submit.prevent="updateActiveAgentBot">
       <SettingsFieldSection

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "scope": "visual evidence only; private captures excluded",
+  "images": [
+    {
+      "id": "IMG_01",
+      "sha256": "2aaff6daf8e071ea71d56cf4d09cb9bbe66eece09c970f500b8e147c1919f545",
+      "title": "Grafo português",
+      "observation": "13 posições: Comercial 2; SP 4; POA 4; Financeiro 3; retornos 3/5/5/4.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_02",
+      "sha256": "a2ef3469f294b1d952614422408169a068145d73df965da1148d3ffc2b17954a",
+      "title": "Grafo inglês",
+      "observation": "Mesmos departamentos e posições; pessoa compartilhada entre SP/POA não implica 13 identidades.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_03",
+      "sha256": "82314d2141ebbd2450beb2732289c7e0a82b137b20832dd97045842c331eb12a",
+      "title": "Tema web",
+      "observation": "Layout de chat web; não prova interatividade do WhatsApp.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_04",
+      "sha256": "d03908157b3aaeced04c2584ef6c4f7e1878ad3e2bfecf702aecffbab3271755",
+      "title": "Dimensões web",
+      "observation": "800px/100%; CSS completo não fornecido.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_05",
+      "sha256": "b9fb3a919694ef6baeb73dc019ac60955f37335f17c8ae49370ba74979d738e3",
+      "title": "Conversa e expediente",
+      "observation": "Avisos e saudações repetidos; não reproduzir duplicação.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_06",
+      "sha256": "8a8b98d1f1fd8b2af545f05b6f7b734b21393b63ed408abb1dfc2849e2d0f18d",
+      "title": "Idioma e opção inválida",
+      "observation": "Mensagem bilíngue e reapresentação do menu.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_07",
+      "sha256": "8fbfcd675436ed246a047bf304eff46e9ba9be55f20648940c6770a802bab85d",
+      "title": "Entrada inválida",
+      "observation": "Repete menu de idioma sem exigir nova saudação.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_08",
+      "sha256": "2356dee3289383714af946ee619301a3326efc03179d8401ab9a6b86fc0043d3",
+      "title": "Navegação português",
+      "observation": "POA 3 e repetição histórica de boas-vindas.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_09",
+      "sha256": "9559f00f116c90c4301ea8634fa3e7204f4753cd7146c128bf4cc9ea8da5c996",
+      "title": "Atribuição POA 2",
+      "observation": "Agente escolhido visível; cascata e reabertura históricas não desejadas.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_10",
+      "sha256": "f89689523c23cfe452a780464cc3102213b1321a7cda5c2cfdfc0873eb37b0e8",
+      "title": "Continuação da triagem",
+      "observation": "Múltiplas boas-vindas observadas.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_11",
+      "sha256": "e6da8b48325a8fc60a29a67498962cf95360753fa8fd88f8c81b77ed5426ae30",
+      "title": "Atribuição POA 3",
+      "observation": "Múltiplas atribuições/reaberturas; resposta humana posterior.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_12",
+      "sha256": "73b46187356e370ce05aacb7b2ef8e945b331e615da95dcb1c05f0093f82dcff",
+      "title": "Humano e resolução",
+      "observation": "Resposta pública, resolução e convite CSAT; não prova consulta ERP.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_13",
+      "sha256": "c3c379a04ab4958bfa0e62057d2f5754b06e2134f529d56fea9dc14982ea0465",
+      "title": "Caixa API",
+      "observation": "Transporte de caixa API; não contrato do Flow.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_14",
+      "sha256": "bed8d073c145683d9952499a9481c9794f30c80f1d8e25df17f499f4eb762061",
+      "title": "Política de canal",
+      "observation": "Webhook de transporte, saudação e conversa única são configurações distintas.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_15",
+      "sha256": "91621994d48f08752d57fc20e556193731c3a56f800af13ac3e1023ce6d3e71e",
+      "title": "Membros e distribuição",
+      "observation": "14 membros visíveis e autoatribuição legada; não copiar política incompatível.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_16",
+      "sha256": "832249b4878279e558d96f04ac58e708b076e7a3c4724d9c1cb23ff9a1925b29",
+      "title": "Expediente",
+      "observation": "Brasília GMT-03; horários truncados; sábado/domingo indisponíveis na captura.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_17",
+      "sha256": "7b7916ed131d41f2a8440e1b2862efb03709db9f1810887403b3a7e0ec320f89",
+      "title": "CSAT",
+      "observation": "Cinco faces, texto personalizado, uma por conversa; regras de etiquetas ilegíveis.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_18",
+      "sha256": "fc59c149281b367f8960023358da062214f0bb2c6d1ad33284e075a55522a115",
+      "title": "Identidade do canal",
+      "observation": "Contém segredo/identificador; não transcrever ou reutilizar; validação obrigatória aparece desmarcada.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_19",
+      "sha256": "ac61e98b116ba7b570778df1bc4780d7cf42bee87126e328c7343b8a3aa03f33",
+      "title": "Bot selecionado",
+      "observation": "OIA Logística selecionado na caixa legada.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_20",
+      "sha256": "cd16be64c81a9f6ab9375867c1936fd41106099b8072e086039324e19109ea70",
+      "title": "AgentBot",
+      "observation": "Callback legado não equivale ao novo runtime ou webhook de transporte.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_21",
+      "sha256": "567331f5c37cd6cffb3a138063d4acd6e7bb882eaa43d0916bebf9b34f0e6297",
+      "title": "WhatsApp histórico",
+      "observation": "Convites CSAT com links opacos; não prova resposta registrada nem imagem nova.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_22",
+      "sha256": "f1fa12866f3b8fd75330050744b141175e069564bcf7e2d6f2a539311af68677",
+      "title": "Cadastro de bots",
+      "observation": "11 linhas visíveis, contador15; origem/conta/estado distinguem bots.",
+      "rawCaptureIncluded": false
+    },
+    {
+      "id": "IMG_23",
+      "sha256": "35932a87915eeea0fb94f3fe49809986d23f09addd3efe775c3cbda08a0d3206",
+      "title": "Cadastro de instâncias",
+      "observation": "9 linhas visíveis, contador15 ativas/0 inativas; inventário incompleto.",
+      "rawCaptureIncluded": false
+    }
+  ]
+}

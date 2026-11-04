@@ -6,6 +6,9 @@ x-app: &app
   environment:
     RAILS_ENV: production
     NODE_ENV: production
+    TZ: UTC
+    APP_TIME_ZONE: America/Sao_Paulo
+    FRONTEND_URL: ${FRONTEND_URL:?Defina o dominio HTTPS exclusivo HML}
     POSTGRES_HOST: postgres
     POSTGRES_DATABASE: jrc_ura_hml
     POSTGRES_USERNAME: jrc_ura_hml
