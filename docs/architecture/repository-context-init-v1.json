@@ -1,0 +1,51 @@
+{
+  "captured_on": "2026-11-13",
+  "project_id": "nico-legado",
+  "project_name": "JRC Conversas NICO — frente legada de URA",
+  "nature": "Brownfield",
+  "scope": "application",
+  "source_branch": "codex/ura-nativa-hml-20261104",
+  "source_head": "f6a83b3ebc68a4f74ebbff11d9046037db2a267b",
+  "origin": "https://github.com/ClaudioHideki/jrc-conversas-nico-v12-2-7-comercial-integrado.git",
+  "stack_description": "Ruby/Rails, Vue, PostgreSQL, Redis e integrações NICO/URA.",
+  "application_runtime_verified": false,
+  "deployment_verified": false,
+  "sources": [
+    {
+      "path": "AGENTS.md",
+      "kind": "file",
+      "sha256": "f43c4740509b78844d0745026d9c0efc5174ee7ba1a904f06d7f274c0556b3cf"
+    },
+    {
+      "path": "README.md",
+      "kind": "file",
+      "sha256": "00b1867b3e486325ff35a8d5194e937974a02cab39cbbc0a0d9846e3c1ff1ac7"
+    },
+    {
+      "path": "package.json",
+      "kind": "file",
+      "sha256": "a92f47574ac0c9294f26819dbc87e6694e7c85b6dab6eba04c75e800e560a080"
+    },
+    {
+      "path": "Gemfile",
+      "kind": "file",
+      "sha256": "9c2d92e1ebd1ab8ccd0e6dbf10e8209bf06e711f91339097f5e12a42d3bbb0c2"
+    },
+    {
+      "path": "db/schema.rb",
+      "kind": "file",
+      "sha256": "a48c2e65e0d52b8db5920de90692034efa67580f422b9611d2bdf441d480ea5b"
+    }
+  ],
+  "declared_versions": {
+    "node_nvmrc": "24.13.0",
+    "ruby_declared": "3.4.4",
+    "name": "@chatwoot/chatwoot",
+    "version": "4.16.2",
+    "packageManager": "pnpm@10.2.0+sha512.0d27364e0139c6aadeed65ada153135e0ca96c8da42123bd50047f961339dc7a758fc2e944b428f52be570d1bd3372455c1c65fa2e7aa0bfbf931190f9552001",
+    "engines": {
+      "node": "24.x",
+      "pnpm": "10.x"
+    }
+  }
+}
